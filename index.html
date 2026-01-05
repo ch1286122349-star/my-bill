@@ -152,6 +152,32 @@
 
     .note { font-size: 13px; }
 
+    .status {
+      font-size: 13px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    .status.ok { color: var(--primary); }
+    .status.error { color: #c0392b; }
+
+    .wa-box {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 106, 61, 0.08);
+      border: 1px solid rgba(255, 106, 61, 0.3);
+      display: grid;
+      gap: 8px;
+    }
+
+    .wa-text {
+      font-size: 13px;
+      color: var(--ink);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     @media (max-width: 640px) {
       .card { padding: 20px; }
       header { margin-bottom: 18px; }
@@ -214,8 +240,100 @@
 
         <button type="submit" class="btn primary">发送</button>
         <div class="note muted">提交后我们会在 1-2 个工作日内邮件回复。</div>
+        <div class="status" id="form-status" aria-live="polite"></div>
+        <div class="wa-box" id="wa-box" hidden>
+          <div class="note muted">如需通过 WhatsApp 快速联系，可直接使用以下内容：</div>
+          <a id="wa-link" class="btn primary" style="width: fit-content;" target="_blank" rel="noopener">打开 WhatsApp</a>
+          <div class="wa-text" id="wa-text"></div>
+        </div>
       </form>
     </main>
   </div>
+  <script>
+    const form = document.querySelector('form');
+    const statusEl = document.getElementById('form-status');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const waBox = document.getElementById('wa-box');
+    const waLink = document.getElementById('wa-link');
+    const waText = document.getElementById('wa-text');
+    const whatsappNumber = '528111777774'; // +52 8111777774
+    waLink.href = `https://wa.me/${whatsappNumber}`;
+    const apiBase = window.API_BASE || 'http://localhost:3000';
+
+    const showStatus = (msg, type = 'ok') => {
+      statusEl.textContent = msg;
+      statusEl.className = `status ${type}`;
+    };
+
+    const buildWhatsAppMessage = (data) => {
+      const parts = [
+        `姓名/昵称：${data.name || ''}`,
+        `邮箱：${data.email || ''}`,
+        data.city ? `所在城市：${data.city}` : '',
+        data.type ? `需求：${data.type}` : '',
+        data.details ? `主题/内容：${data.details}` : '',
+        data.contact ? `备用联系方式：${data.contact}` : '',
+      ].filter(Boolean);
+      return `来自网站表单的新提交：\n${parts.join('\n')}`;
+    };
+
+    const updateWhatsAppBlock = (data) => {
+      const message = buildWhatsAppMessage(data);
+      waText.textContent = message;
+      waLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      waBox.hidden = false;
+    };
+
+    const parseJsonSafe = async (res) => {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return { ok: false, message: '服务未返回 JSON，可能后端未启动' };
+      }
+      try {
+        return await res.json();
+      } catch (err) {
+        return { ok: false, message: '解析响应失败，检查后端服务' };
+      }
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      showStatus('提交中…', 'ok');
+      submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch(`${apiBase}/api/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await parseJsonSafe(res);
+        if (!res.ok || !data.ok) throw new Error(data.message || '提交失败，请确认已运行 npm start');
+
+        showStatus('提交成功！', 'ok');
+        updateWhatsAppBlock(payload);
+        form.reset();
+      } catch (err) {
+        showStatus(err.message || '网络异常，稍后再试', 'error');
+        waBox.hidden = true;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    waLink.addEventListener('click', (e) => {
+      if (!waLink.href) return;
+      e.preventDefault();
+      const opened = window.open(waLink.href, '_blank', 'noopener');
+      if (!opened) {
+        // Fallback for environments阻止弹窗：直接跳转当前页
+        window.location.href = waLink.href;
+      }
+    });
+  </script>
 </body>
 </html>
