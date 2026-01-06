@@ -1,3 +1,4 @@
+require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -6,7 +7,7 @@ const { google } = require('googleapis');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = path.join(__dirname, 'data.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
 
 // Initialize SQLite and ensure table exists.
 const db = new sqlite3.Database(DB_PATH);

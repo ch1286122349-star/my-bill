@@ -258,7 +258,8 @@
     const waText = document.getElementById('wa-text');
     const whatsappNumber = '528111777774'; // +52 8111777774
     waLink.href = `https://wa.me/${whatsappNumber}`;
-    const apiBase = window.API_BASE || 'http://localhost:3000';
+    const apiBase = window.API_BASE
+      || (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
 
     const showStatus = (msg, type = 'ok') => {
       statusEl.textContent = msg;
