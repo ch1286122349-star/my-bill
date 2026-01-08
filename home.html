@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>墨西哥中文网 · 主页</title>
+  <!--HEAD-->
+</head>
+<body class="home">
+  <!--HEADER-->
+  <div class="page">
+    <main class="hero">
+      <div>
+        <div class="eyebrow">墨西哥华人社群</div>
+        <h1>让你的业务被更多华人看见</h1>
+        <p class="muted">想在墨西哥华人圈免费展示信息？联系我们，我们会将内容发布到社区。</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="/contact">Contact</a>
+          <a class="btn ghost" href="/contact">填写表单</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h2>留下联系方式</h2>
+        <p class="muted">填写表单后，我们会通过微信/WhatsApp 联系你。</p>
+        <form action="#" method="post">
+          <div class="field">
+            <label for="contact">联系方式 *</label>
+            <input id="contact" name="contact" type="text" required placeholder="微信号 / WhatsApp">
+          </div>
+
+          <div class="field">
+            <label for="details">主题 *</label>
+            <textarea id="details" name="details" required placeholder="简要说明你的主题或需求"></textarea>
+          </div>
+
+          <button type="submit" class="btn primary">发送</button>
+          <div class="note muted">提交后我们会在 1-2 个工作日内联系你。</div>
+          <div class="status" id="form-status" aria-live="polite"></div>
+          <div class="wa-box" id="wa-box" hidden>
+            <div class="note muted">如需通过 WhatsApp 快速联系，可直接使用以下内容：</div>
+            <a id="wa-link" class="btn primary" style="width: fit-content;" target="_blank" rel="noopener">打开 WhatsApp</a>
+            <div class="wa-text" id="wa-text"></div>
+          </div>
+        </form>
+      </div>
+    </main>
+    <section class="page-section">
+      <!--COMPANIES-->
+    </section>
+
+  </div>
+  <script>
+    const form = document.querySelector('.hero-card form');
+    if (form) {
+      const statusEl = document.getElementById('form-status');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const waBox = document.getElementById('wa-box');
+      const waLink = document.getElementById('wa-link');
+      const waText = document.getElementById('wa-text');
+      const whatsappNumber = '528111777774'; // +52 8111777774
+      const apiBase = window.API_BASE
+        || (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
+
+      const showStatus = (msg, type = 'ok') => {
+        statusEl.textContent = msg;
+        statusEl.className = `status ${type}`;
+      };
+
+      const buildWhatsAppMessage = (data) => {
+        const parts = [
+          data.contact ? `联系方式：${data.contact}` : '',
+          data.details ? `主题：${data.details}` : '',
+        ].filter(Boolean);
+        return `来自网站表单的新提交：\n${parts.join('\n')}`;
+      };
+
+      const updateWhatsAppBlock = (data) => {
+        const message = buildWhatsAppMessage(data);
+        waText.textContent = message;
+        waLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+        waBox.hidden = false;
+      };
+
+      const parseJsonSafe = async (res) => {
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          return { ok: false, message: '服务未返回 JSON，可能后端未启动' };
+        }
+        try {
+          return await res.json();
+        } catch (err) {
+          return { ok: false, message: '解析响应失败，检查后端服务' };
+        }
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showStatus('提交中…', 'ok');
+        submitBtn.disabled = true;
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          const res = await fetch(`${apiBase}/api/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await parseJsonSafe(res);
+          if (!res.ok || !data.ok) throw new Error(data.message || '提交失败，请确认已运行 npm start');
+
+          showStatus('提交成功！', 'ok');
+          updateWhatsAppBlock(payload);
+          form.reset();
+        } catch (err) {
+          showStatus(err.message || '网络异常，稍后再试', 'error');
+          waBox.hidden = true;
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      waLink.addEventListener('click', (e) => {
+        if (!waLink.href) return;
+        e.preventDefault();
+        const opened = window.open(waLink.href, '_blank', 'noopener');
+        if (!opened) {
+          // Fallback for environments阻止弹窗：直接跳转当前页
+          window.location.href = waLink.href;
+        }
+      });
+    }
+  </script>
+  <!--FOOTER-->
+</body>
+</html>

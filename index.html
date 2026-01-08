@@ -4,399 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>墨西哥中文网 · 联系表单</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ink: #14110f;
-      --muted: #4d3f39;
-      --primary: #ff3d7a;
-      --accent: #ffd400;
-      --teal: #18c4e0;
-      --blue: #2563eb;
-      --lime: #b8ff3b;
-      --paper: #fff4e3;
-      --card: #fffdf7;
-      --radius: 18px;
-      --outline: 3px solid #14110f;
-      --shadow: 8px 8px 0 #14110f;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-      background-color: var(--paper);
-      background-image:
-        radial-gradient(#14110f 0.8px, transparent 0.9px),
-        radial-gradient(#14110f 0.8px, transparent 0.9px),
-        radial-gradient(circle at 12% 18%, rgba(255, 61, 122, 0.35), transparent 36%),
-        radial-gradient(circle at 88% 16%, rgba(255, 212, 0, 0.4), transparent 34%),
-        radial-gradient(circle at 82% 78%, rgba(24, 196, 224, 0.35), transparent 36%),
-        radial-gradient(circle at 18% 82%, rgba(37, 99, 235, 0.3), transparent 36%);
-      background-size: 18px 18px, 18px 18px, auto, auto, auto, auto;
-      background-position: 0 0, 9px 9px, center, center, center, center;
-      color: var(--ink);
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    body::before,
-    body::after {
-      content: '';
-      position: fixed;
-      inset: auto;
-      width: 360px;
-      height: 360px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 61, 122, 0.45), rgba(255, 212, 0, 0));
-      z-index: -1;
-      filter: blur(1px);
-      opacity: 0.85;
-      animation: floaty 10s ease-in-out infinite;
-    }
-
-    body::before {
-      top: -120px;
-      left: -120px;
-    }
-
-    body::after {
-      bottom: -140px;
-      right: -120px;
-      background: radial-gradient(circle at 30% 30%, rgba(24, 196, 224, 0.4), rgba(37, 99, 235, 0));
-      animation-delay: -4s;
-    }
-
-    .page {
-      width: 100%;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 42px 22px 64px;
-      animation: fadeUp 520ms ease both;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-
-    .logo {
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
-      background: conic-gradient(from 210deg, #ff3d7a, #ffd400, #18c4e0, #2563eb, #ff3d7a);
-      display: grid;
-      place-items: center;
-      color: #fff;
-      box-shadow: var(--shadow);
-      font-size: 15px;
-      font-weight: 700;
-      font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
-      transform: rotate(-5deg);
-      border: var(--outline);
-      animation: bob 6s ease-in-out infinite;
-    }
-
-    .brand-title {
-      font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
-      font-size: 24px;
-      letter-spacing: 0.06em;
-      text-shadow: 2px 2px 0 #14110f;
-    }
-
-    .brand-subtitle {
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow);
-      border: var(--outline);
-      position: relative;
-      overflow: hidden;
-      z-index: 1;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: -70px;
-      right: -70px;
-      width: 200px;
-      height: 200px;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255, 212, 0, 0.7), rgba(255, 212, 0, 0));
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .card::after {
-      content: '';
-      position: absolute;
-      left: 18px;
-      bottom: -18px;
-      width: 120px;
-      height: 120px;
-      background:
-        radial-gradient(#14110f 1px, transparent 1.6px),
-        radial-gradient(#14110f 1px, transparent 1.6px);
-      background-size: 10px 10px;
-      background-position: 0 0, 5px 5px;
-      opacity: 0.25;
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(32px, 4.2vw, 44px);
-      letter-spacing: 0.04em;
-      font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
-      color: #14110f;
-      display: inline-block;
-      padding: 6px 16px 8px;
-      background: var(--accent);
-      border: var(--outline);
-      box-shadow: var(--shadow);
-      transform: rotate(-1deg);
-    }
-
-    p { margin: 0; }
-
-    .muted {
-      color: var(--muted);
-      line-height: 1.65;
-      font-size: 14px;
-    }
-
-    form {
-      margin-top: 16px;
-      display: grid;
-      gap: 16px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-      animation: fadeUp 500ms ease both;
-    }
-
-    .form-grid .field:nth-child(1) { animation-delay: 80ms; }
-    .form-grid .field:nth-child(2) { animation-delay: 140ms; }
-    form > .field:nth-of-type(1) { animation-delay: 200ms; }
-    form > .field:nth-of-type(2) { animation-delay: 260ms; }
-
-    label {
-      font-weight: 700;
-      color: var(--ink);
-      font-size: 14px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 13px 12px;
-      border-radius: 12px;
-      border: var(--outline);
-      font-size: 14px;
-      background: #fff;
-      outline: none;
-      box-shadow: 4px 4px 0 #14110f;
-      transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
-    }
-
-    input:focus, textarea:focus, select:focus {
-      border-color: #14110f;
-      box-shadow: 6px 6px 0 #14110f, 0 0 0 3px rgba(255, 61, 122, 0.25);
-      transform: translateY(-1px);
-    }
-
-    textarea { min-height: 110px; resize: vertical; }
-
-    .btn {
-      border: none;
-      cursor: pointer;
-      border-radius: 12px;
-      padding: 15px 22px;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
-      align-self: flex-start;
-    }
-
-    .btn.primary {
-      background: #ff3d7a;
-      color: #fffdf7;
-      border: var(--outline);
-      box-shadow: var(--shadow);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn.primary::after {
-      content: '';
-      position: absolute;
-      top: -60%;
-      left: -30%;
-      width: 60%;
-      height: 220%;
-      background: rgba(255, 255, 255, 0.4);
-      transform: rotate(20deg) translateX(-140%);
-      transition: transform 280ms ease;
-    }
-
-    .btn:hover {
-      transform: translateY(-2px) scale(1.02);
-      filter: saturate(1.1);
-    }
-
-    .btn:hover::after { transform: rotate(20deg) translateX(190%); }
-
-    .note { font-size: 13px; }
-
-    .status {
-      font-size: 13px;
-      margin-top: 8px;
-      font-weight: 600;
-    }
-
-    .status.ok { color: var(--primary); }
-    .status.error { color: #c0392b; }
-
-    .wa-box {
-      margin-top: 10px;
-      padding: 14px;
-      border-radius: 16px;
-      background:
-        linear-gradient(0deg, rgba(255, 61, 122, 0.1), rgba(255, 61, 122, 0.1)),
-        radial-gradient(#14110f 1px, transparent 1.6px);
-      background-size: auto, 12px 12px;
-      border: var(--outline);
-      box-shadow: 6px 6px 0 #14110f;
-      display: grid;
-      gap: 8px;
-    }
-
-    .wa-text {
-      font-size: 13px;
-      color: var(--ink);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    @media (max-width: 640px) {
-      .card { padding: 20px; }
-      header { margin-bottom: 18px; }
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes floaty {
-      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-      50% { transform: translate3d(10px, 18px, 0) rotate(3deg); }
-    }
-
-    @keyframes bob {
-      0%, 100% { transform: rotate(-6deg) translateY(0); }
-      50% { transform: rotate(-2deg) translateY(-6px); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
-    }
-  </style>
+  <!--HEAD-->
 </head>
 <body>
+  <!--HEADER-->
   <div class="page">
-    <header>
-      <div class="brand">
-        <div class="logo">MX</div>
-        <div>
-          <div class="brand-title">墨西哥中文网</div>
-          <small class="muted brand-subtitle">订阅 / 合作表单</small>
-        </div>
-      </div>
-    </header>
-
-    <main class="card" id="contact">
+    <main class="contact-card" id="contact">
       <h1>留下联系方式</h1>
-      <p class="muted">填写表单后，我们会通过邮箱回复最新的生活指南、活动或合作信息。</p>
+      <p class="muted">填写表单后，我们会通过微信/WhatsApp 联系你。</p>
       <form action="#" method="post">
-        <div class="form-grid">
-          <div class="field">
-            <label for="name">姓名 / 昵称 *</label>
-            <input id="name" name="name" type="text" required placeholder="请输入姓名或昵称">
-          </div>
-          <div class="field">
-            <label for="email">邮箱 *</label>
-            <input id="email" name="email" type="email" required placeholder="例如：you@example.com">
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="field">
-            <label for="city">所在城市</label>
-            <input id="city" name="city" type="text" placeholder="例如：CDMX / Guadalajara">
-          </div>
-          <div class="field">
-            <label for="type">需求</label>
-            <select id="type" name="type" required>
-              <option value="">选择需求</option>
-              <option>订阅周报</option>
-              <option>商务合作</option>
-              <option>活动 / 招聘发布</option>
-              <option>投稿分享</option>
-            </select>
-          </div>
+        <div class="field">
+          <label for="contact">联系方式 *</label>
+          <input id="contact" name="contact" type="text" required placeholder="微信号 / WhatsApp">
         </div>
 
         <div class="field">
-          <label for="details">想了解的主题 / 合作内容</label>
-          <textarea id="details" name="details" placeholder="简要说明你的需求或想关注的内容"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="contact">备用联系方式（可选）</label>
-          <input id="contact" name="contact" type="text" placeholder="微信号 / WhatsApp">
+          <label for="details">主题 *</label>
+          <textarea id="details" name="details" required placeholder="简要说明你的主题或需求"></textarea>
         </div>
 
         <button type="submit" class="btn primary">发送</button>
-        <div class="note muted">提交后我们会在 1-2 个工作日内邮件回复。</div>
+        <div class="note muted">提交后我们会在 1-2 个工作日内联系你。</div>
         <div class="status" id="form-status" aria-live="polite"></div>
         <div class="wa-box" id="wa-box" hidden>
           <div class="note muted">如需通过 WhatsApp 快速联系，可直接使用以下内容：</div>
@@ -425,12 +53,8 @@
 
     const buildWhatsAppMessage = (data) => {
       const parts = [
-        `姓名/昵称：${data.name || ''}`,
-        `邮箱：${data.email || ''}`,
-        data.city ? `所在城市：${data.city}` : '',
-        data.type ? `需求：${data.type}` : '',
-        data.details ? `主题/内容：${data.details}` : '',
-        data.contact ? `备用联系方式：${data.contact}` : '',
+        data.contact ? `联系方式：${data.contact}` : '',
+        data.details ? `主题：${data.details}` : '',
       ].filter(Boolean);
       return `来自网站表单的新提交：\n${parts.join('\n')}`;
     };
@@ -493,5 +117,6 @@
       }
     });
   </script>
+  <!--FOOTER-->
 </body>
 </html>

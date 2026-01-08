@@ -1,0 +1,509 @@
+[
+  {
+    "slug": "yunhai-mx",
+    "name": "云海中餐（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "主营粤菜与商务套餐，支持企业团餐预定。",
+    "contact": "yunhai-mx",
+    "cover": "/assets/thumb_320_20161111161018_57761.jpg",
+    "detailPaid": true,
+    "detail": "提供企业团餐、宴会包场与节日活动方案，支持菜单定制与送餐服务。可按企业人数与预算给出搭配建议，提供中/西语双语服务。"
+  },
+  {
+    "slug": "nanfeng-eat",
+    "name": "南风面馆（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "川湘小炒与面食连锁，提供团餐与外卖服务。",
+    "contact": "nanfeng-eat"
+  },
+  {
+    "slug": "haijiao-bento",
+    "name": "海角便当（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "商务便当与会议餐定制，覆盖核心区配送。",
+    "contact": "haijiao-bento"
+  },
+  {
+    "slug": "jinwei-roast",
+    "name": "锦味烧味（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "港式烧味与简餐供应，支持批量订购。",
+    "contact": "jinwei-roast"
+  },
+  {
+    "slug": "siji-tea",
+    "name": "四季茶房（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "茶饮与甜点定制，适合活动场景配套。",
+    "contact": "siji-tea"
+  },
+  {
+    "slug": "xijia-mart",
+    "name": "囍家超市（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "亚洲食品零售与团购，提供批发服务。",
+    "contact": "xijia-mart"
+  },
+  {
+    "slug": "mixiang-sweet",
+    "name": "蜜巷甜品（示例）",
+    "industry": "餐饮与零售",
+    "city": "墨西哥城",
+    "summary": "甜品与下午茶方案，适合企业活动。",
+    "contact": "mixiang-sweet"
+  },
+  {
+    "slug": "xinghai-log",
+    "name": "星海物流（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "中墨海运、清关与仓储一体化服务。",
+    "contact": "xinghai-log"
+  },
+  {
+    "slug": "cityrush-mx",
+    "name": "城际速运（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "国内干线 + 同城配送，支持电商履约。",
+    "contact": "cityrush-mx"
+  },
+  {
+    "slug": "hailu-clear",
+    "name": "海陆通关（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "清关代理与跨境拼箱，提供时效方案。",
+    "contact": "hailu-clear"
+  },
+  {
+    "slug": "beiwei-store",
+    "name": "北纬仓配（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "仓储管理与尾程配送，覆盖核心城区。",
+    "contact": "beiwei-store"
+  },
+  {
+    "slug": "tongda-cold",
+    "name": "通达冷链（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "冷链运输与生鲜仓配，温控可追溯。",
+    "contact": "tongda-cold"
+  },
+  {
+    "slug": "lianlu-express",
+    "name": "链路快运（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "跨州干线运输，支持专线定制。",
+    "contact": "lianlu-express"
+  },
+  {
+    "slug": "yungang-hub",
+    "name": "云港集运（示例）",
+    "industry": "物流与供应链",
+    "city": "墨西哥城",
+    "summary": "集运转运与分拨管理，时效稳定。",
+    "contact": "yungang-hub"
+  },
+  {
+    "slug": "huasheng-re",
+    "name": "华盛地产（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "商业地产租售与企业选址服务。",
+    "contact": "huasheng-re"
+  },
+  {
+    "slug": "zhongmo-epc",
+    "name": "中墨工程（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "厂房设计施工与园区工程落地。",
+    "contact": "zhongmo-epc"
+  },
+  {
+    "slug": "hengyu-build",
+    "name": "衡宇建造（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "机电安装与建筑改造，提供项目管理。",
+    "contact": "hengyu-build"
+  },
+  {
+    "slug": "hongjian-mech",
+    "name": "鸿建机电（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "机电工程与设备安装，支持厂房升级。",
+    "contact": "hongjian-mech"
+  },
+  {
+    "slug": "yuanjing-design",
+    "name": "远景装饰（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "办公装修与展示空间设计施工。",
+    "contact": "yuanjing-design"
+  },
+  {
+    "slug": "kunyuan-park",
+    "name": "坤元园区（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "工业园区运营与配套服务对接。",
+    "contact": "kunyuan-park"
+  },
+  {
+    "slug": "sujian-steel",
+    "name": "速建钢构（示例）",
+    "industry": "工程与地产",
+    "city": "墨西哥城",
+    "summary": "钢结构厂房建设，交付周期可控。",
+    "contact": "sujian-steel"
+  },
+  {
+    "slug": "hangcheng-trade",
+    "name": "航程外贸（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "消费品与工业品采购出口，支持质检。",
+    "contact": "hangcheng-trade"
+  },
+  {
+    "slug": "yuanhang-supply",
+    "name": "远航采购（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "一站式选品与供应链对接服务。",
+    "contact": "yuanhang-supply"
+  },
+  {
+    "slug": "yunding-mfg",
+    "name": "云鼎制造（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "代工组装与小批量生产，交付灵活。",
+    "contact": "yunding-mfg"
+  },
+  {
+    "slug": "zhimao-b2b",
+    "name": "智贸出口（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "跨境B2B出口与渠道对接服务。",
+    "contact": "zhimao-b2b"
+  },
+  {
+    "slug": "herun-qc",
+    "name": "合润品控（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "验货与质量管控，支持驻厂服务。",
+    "contact": "herun-qc"
+  },
+  {
+    "slug": "xinda-pack",
+    "name": "鑫达包装（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "外贸包装定制，材质与规格齐全。",
+    "contact": "xinda-pack"
+  },
+  {
+    "slug": "donggang-oem",
+    "name": "东港代工（示例）",
+    "industry": "外贸与制造",
+    "city": "墨西哥城",
+    "summary": "OEM代工与批量生产，提供打样。",
+    "contact": "donggang-oem"
+  },
+  {
+    "slug": "moqiao-tech",
+    "name": "墨桥科技（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "中西双语网站与小程序开发运维。",
+    "contact": "moqiao-tech"
+  },
+  {
+    "slug": "xingyun-cloud",
+    "name": "星云云服（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "云迁移、企业邮箱与安全备份。",
+    "contact": "xingyun-cloud"
+  },
+  {
+    "slug": "jiany-digital",
+    "name": "简益数字（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "品牌官网与社媒运营，内容策划支持。",
+    "contact": "jiany-digital"
+  },
+  {
+    "slug": "yunlian-crm",
+    "name": "云链CRM（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "客户管理与销售线索系统实施。",
+    "contact": "yunlian-crm"
+  },
+  {
+    "slug": "wenlian-ops",
+    "name": "稳联运维（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "服务器托管与日常运维支持。",
+    "contact": "wenlian-ops"
+  },
+  {
+    "slug": "zhihui-design",
+    "name": "智绘设计（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "品牌视觉与物料设计，支持多语言。",
+    "contact": "zhihui-design"
+  },
+  {
+    "slug": "yuanjian-bi",
+    "name": "远见数据（示例）",
+    "industry": "科技与服务",
+    "city": "墨西哥城",
+    "summary": "数据看板与BI报表，决策支持。",
+    "contact": "yuanjian-bi"
+  },
+  {
+    "slug": "huace-consult",
+    "name": "华策咨询（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "企业设立、合规与签证支持。",
+    "contact": "huace-consult"
+  },
+  {
+    "slug": "hegui-service",
+    "name": "合规管家（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "财税筹划与公司合规年度服务。",
+    "contact": "hegui-service"
+  },
+  {
+    "slug": "yinghe-tax",
+    "name": "盈和税务（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "记账报税与审计对接，支持中西语。",
+    "contact": "yinghe-tax"
+  },
+  {
+    "slug": "ruicheng-audit",
+    "name": "瑞成审计（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "年度审计与合规评估，风险提示。",
+    "contact": "ruicheng-audit"
+  },
+  {
+    "slug": "yuanda-legal",
+    "name": "远达法务（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "合同审阅与法律支持，双语服务。",
+    "contact": "yuanda-legal"
+  },
+  {
+    "slug": "huitong-ins",
+    "name": "汇通保险（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "企业财产与货运保险方案。",
+    "contact": "huitong-ins"
+  },
+  {
+    "slug": "yunqi-visa",
+    "name": "云启签证（示例）",
+    "industry": "金融与咨询",
+    "city": "墨西哥城",
+    "summary": "签证办理与续签服务，流程清晰。",
+    "contact": "yunqi-visa"
+  },
+  {
+    "slug": "huqiao-mty",
+    "name": "华侨超市（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "亚洲食品供应，支持批发与企业采购。",
+    "contact": "huqiao-mty"
+  },
+  {
+    "slug": "beilu-food",
+    "name": "北麓食材（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "餐饮食材供应与冷链配送服务。",
+    "contact": "beilu-food"
+  },
+  {
+    "slug": "shancheng-hot",
+    "name": "山城小火锅（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "火锅食材与套餐配送，支持团购。",
+    "contact": "shancheng-hot"
+  },
+  {
+    "slug": "haihe-grain",
+    "name": "海河粮油（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "粮油与调味品批发，供货稳定。",
+    "contact": "haihe-grain"
+  },
+  {
+    "slug": "yihao-fresh",
+    "name": "壹号生鲜（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "生鲜采购与餐饮配货，支持预定。",
+    "contact": "yihao-fresh"
+  },
+  {
+    "slug": "chuanwei-kitchen",
+    "name": "川味小厨（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "川味简餐与活动餐，口味稳定。",
+    "contact": "chuanwei-kitchen"
+  },
+  {
+    "slug": "caiyuan-wholesale",
+    "name": "菜源批发（示例）",
+    "industry": "餐饮与零售",
+    "city": "蒙特雷",
+    "summary": "蔬果批发与配送，覆盖核心区。",
+    "contact": "caiyuan-wholesale"
+  },
+  {
+    "slug": "qianli-it",
+    "name": "千里云（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "企业邮箱、云迁移与安全防护。",
+    "contact": "qianli-it"
+  },
+  {
+    "slug": "weian-sec",
+    "name": "维安 IT（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "IT 运维外包与网络安全巡检。",
+    "contact": "weian-sec"
+  },
+  {
+    "slug": "shuniu-data",
+    "name": "枢纽数据（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "数据备份、系统监控与容灾方案。",
+    "contact": "shuniu-data"
+  },
+  {
+    "slug": "xingdun-sec",
+    "name": "星盾安全（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "安全加固与漏洞扫描，风险评估。",
+    "contact": "xingdun-sec"
+  },
+  {
+    "slug": "lanhai-erp",
+    "name": "蓝海 ERP（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "ERP 实施与流程优化，支持制造业。",
+    "contact": "lanhai-erp"
+  },
+  {
+    "slug": "yuancheng-vdi",
+    "name": "远程桌面（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "远程办公与VDI方案部署。",
+    "contact": "yuancheng-vdi"
+  },
+  {
+    "slug": "yunbackup-mty",
+    "name": "云备份（示例）",
+    "industry": "科技与服务",
+    "city": "蒙特雷",
+    "summary": "数据备份与灾备演练服务。",
+    "contact": "yunbackup-mty"
+  },
+  {
+    "slug": "mocha-tea",
+    "name": "墨城茶社（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "茶饮与中式点心，提供活动定制。",
+    "contact": "mocha-tea"
+  },
+  {
+    "slug": "huayu-bake",
+    "name": "花语烘焙（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "精品烘焙与甜品定制，支持企业订购。",
+    "contact": "huayu-bake"
+  },
+  {
+    "slug": "yefeng-sweet",
+    "name": "椰风甜品（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "轻食甜品与下午茶方案，适合活动配套。",
+    "contact": "yefeng-sweet"
+  },
+  {
+    "slug": "zhuli-rice",
+    "name": "竹里饭团（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "日式饭团与便当，支持企业团购。",
+    "contact": "zhuli-rice"
+  },
+  {
+    "slug": "nanan-coffee",
+    "name": "南岸咖啡（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "咖啡豆供应与企业咖啡服务。",
+    "contact": "nanan-coffee"
+  },
+  {
+    "slug": "qinghe-lite",
+    "name": "清禾轻食（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "轻食沙拉与健康餐，支持定制。",
+    "contact": "qinghe-lite"
+  },
+  {
+    "slug": "lvye-mart",
+    "name": "绿野超市（示例）",
+    "industry": "餐饮与零售",
+    "city": "瓜达拉哈拉",
+    "summary": "本地超市与日用品采购服务。",
+    "contact": "lvye-mart"
+  }
+]
