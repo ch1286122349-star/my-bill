@@ -74,7 +74,7 @@
    color: var(--primary);
  }
 
- @media (max-width: 640px) {
+  @media (max-width: 640px) {
    .header-inner {
      padding: 10px 16px;
    }
