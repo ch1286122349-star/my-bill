@@ -755,13 +755,29 @@ body::after {
 }
 
 .contact-card {
-  margin: 80px auto 0;
+  margin: 60px auto 0;
   max-width: 900px;
   background: var(--card);
   border-radius: 32px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 40px 60px rgba(15, 23, 42, 0.12);
-  padding: 38px;
+  padding: 30px;
+}
+
+.contact-card textarea {
+  min-height: 96px;
+}
+
+.contact-head {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.contact-head h1,
+.contact-head h2,
+.contact-head p {
+  margin: 0;
 }
 
 .company-detail {
@@ -1326,6 +1342,15 @@ body.map-expanded {
   margin-top: 18px;
 }
 
+.form-grid--compact {
+  gap: 12px;
+  margin-top: 0;
+}
+
+.field--span-2 {
+  grid-column: 1 / -1;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -1370,6 +1395,47 @@ textarea {
   font-size: 13px;
 }
 
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.form-actions .note {
+  margin: 0;
+}
+
+.owner-contact {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 13px;
+  color: rgba(15, 20, 42, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.owner-contact--compact {
+  padding: 8px 10px;
+}
+
+.owner-contact strong {
+  color: rgba(15, 20, 42, 0.9);
+}
+
+.owner-copy {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .status {
   font-size: 13px;
   margin-top: 8px;
@@ -1392,6 +1458,12 @@ textarea {
   border: 1px solid rgba(47, 107, 255, 0.2);
   display: grid;
   gap: 8px;
+}
+
+.wa-box--compact {
+  margin-top: 8px;
+  padding: 12px;
+  gap: 6px;
 }
 
 .wa-text {

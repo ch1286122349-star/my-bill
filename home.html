@@ -13,30 +13,39 @@
       <div>
         <div class="eyebrow">墨西哥华人社群</div>
         <h1>让你的业务被更多华人看见</h1>
-        <p class="muted">想在墨西哥华人圈免费展示信息？联系我们，我们会将内容发布到社区。</p>
+        <p class="muted">想在墨西哥华人圈展示信息？联系我们，我们会将内容发布到社区。</p>
         <div class="hero-actions">
           <a class="btn primary" href="/contact">Contact</a>
           <a class="btn ghost" href="/contact">填写表单</a>
         </div>
       </div>
       <div class="hero-card">
-        <h2>留下联系方式</h2>
-        <p class="muted">填写表单后，我们会通过微信/WhatsApp 联系你。</p>
+        <div class="contact-head">
+          <h2>留下联系方式</h2>
+        </div>
         <form action="#" method="post">
-          <div class="field">
-            <label for="contact">联系方式 *</label>
-            <input id="contact" name="contact" type="text" required placeholder="微信号 / WhatsApp">
+          <div class="form-grid form-grid--compact">
+            <div class="field">
+              <label for="contact">联系方式 *</label>
+              <input id="contact" name="contact" type="text" required placeholder="微信号 / WhatsApp">
+            </div>
+
+            <div class="field field--span-2">
+              <label for="details">主题 *</label>
+              <textarea id="details" name="details" required placeholder="简要说明你的主题或需求"></textarea>
+            </div>
           </div>
 
-          <div class="field">
-            <label for="details">主题 *</label>
-            <textarea id="details" name="details" required placeholder="简要说明你的主题或需求"></textarea>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">发送</button>
+            <div class="note muted">提交后我们会在 1-2 个工作日内联系你。</div>
           </div>
-
-          <button type="submit" class="btn primary">发送</button>
-          <div class="note muted">提交后我们会在 1-2 个工作日内联系你。</div>
+          <div class="owner-contact owner-contact--compact">
+            <span>站长微信：<strong>Ch1286122349</strong></span>
+            <button type="button" class="btn ghost owner-copy" data-copy="Ch1286122349">一键复制</button>
+          </div>
           <div class="status" id="form-status" aria-live="polite"></div>
-          <div class="wa-box" id="wa-box" hidden>
+          <div class="wa-box wa-box--compact" id="wa-box" hidden>
             <div class="note muted">如需通过 WhatsApp 快速联系，可直接使用以下内容：</div>
             <a id="wa-link" class="btn primary" style="width: fit-content;" target="_blank" rel="noopener">打开 WhatsApp</a>
             <div class="wa-text" id="wa-text"></div>
@@ -58,6 +67,7 @@
       const waLink = document.getElementById('wa-link');
       const waText = document.getElementById('wa-text');
       const whatsappNumber = '528111777774'; // +52 8111777774
+      waLink.href = `https://wa.me/${whatsappNumber}`;
       const apiBase = window.API_BASE
         || (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
 
@@ -122,14 +132,27 @@
         }
       });
 
+      const copyButtons = document.querySelectorAll('[data-copy]');
+      copyButtons.forEach((button) => {
+        button.addEventListener('click', async () => {
+          const value = button.dataset.copy || '';
+          if (!value) return;
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(value);
+            const original = button.textContent;
+            button.textContent = '已复制';
+            window.setTimeout(() => {
+              button.textContent = original;
+            }, 1600);
+          }
+        });
+      });
+
       waLink.addEventListener('click', (e) => {
         if (!waLink.href) return;
+        const targetUrl = waLink.href;
         e.preventDefault();
-        const opened = window.open(waLink.href, '_blank', 'noopener');
-        if (!opened) {
-          // Fallback for environments阻止弹窗：直接跳转当前页
-          window.location.href = waLink.href;
-        }
+        window.open(targetUrl, '_blank', 'noopener');
       });
     }
   </script>

@@ -404,8 +404,8 @@ const buildCompaniesHtml = () => {
   });
 
   const priorityCities = new Map([
-    ['蒙特雷', 0],
-    ['墨西哥城', 1],
+    ['墨西哥城', 0],
+    ['蒙特雷', 1],
   ]);
   const orderedCities = [...cityOrder].sort((a, b) => {
     const pa = priorityCities.has(a) ? priorityCities.get(a) : Number.POSITIVE_INFINITY;
@@ -465,7 +465,6 @@ const buildCompaniesHtml = () => {
       `<section class=\"city-section\" id=\"${id}\">` +
       `<div class=\"city-head\">` +
       `<h2>${escapeHtml(city)}</h2>` +
-      `<p class=\"muted\">${cityEntry.count} 家企业 · 共 ${industryCount} 个行业。</p>` +
       `</div>` +
       `<div class=\"city-body\">${industriesHtml}</div>` +
       `</section>`
