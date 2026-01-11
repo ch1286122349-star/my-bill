@@ -1360,5 +1360,61 @@
     "lat": 25.7859863,
     "lng": -100.226228,
     "category": "面馆"
+  },
+  {
+    "slug": "julongxuan-gourmet-cdmx",
+    "name": "聚龙轩 JULONGXUAN RESTAURANTE GOURMET CHINO",
+    "industry": "餐饮与服务",
+    "city": "墨西哥城",
+    "summary": "评分 4.6（42） · 中餐馆",
+    "contact": "暂未提供",
+    "cover": "/api/place-photo/ChIJZbH3ZAD50YUR4G49KgIMWWc",
+    "placeId": "ChIJZbH3ZAD50YUR4G49KgIMWWc",
+    "mapQuery": "聚龙轩 JULONGXUAN RESTAURANTE GOURMET CHINO Mexico City",
+    "lat": 19.4357009,
+    "lng": -99.1749028,
+    "category": "中餐"
+  },
+  {
+    "slug": "taiwan-dim-sum-mty",
+    "name": "Taiwan Dim Sum",
+    "industry": "餐饮与服务",
+    "city": "蒙特雷",
+    "summary": "评分 4.5（2668） · 中餐馆",
+    "contact": "暂未提供",
+    "cover": "/api/place-photo/ChIJdy7MMOeVYoYR5MVHoZKyrTA",
+    "placeId": "ChIJdy7MMOeVYoYR5MVHoZKyrTA",
+    "mapQuery": "Taiwan Dim Sum Monterrey",
+    "lat": 25.6944972,
+    "lng": -100.3435181,
+    "category": "中餐"
+  },
+  {
+    "slug": "super-one-mty",
+    "name": "SUPER ONE",
+    "industry": "餐饮与服务",
+    "city": "蒙特雷",
+    "summary": "评分 4.4（20） · 超市 · 有泡面等中国食物",
+    "contact": "暂未提供",
+    "cover": "/api/place-photo/ChIJ8yJ-eQDBYoYRYDB3AHSt5L4",
+    "placeId": "ChIJ8yJ-eQDBYoYRYDB3AHSt5L4",
+    "mapQuery": "SUPER ONE Monterrey",
+    "lat": 25.6598309,
+    "lng": -100.2350152,
+    "category": "超市"
+  },
+  {
+    "slug": "xihu-supermercados-mty",
+    "name": "XIHU Supermercados Chinos",
+    "industry": "餐饮与服务",
+    "city": "蒙特雷",
+    "summary": "评分 5（6） · 超市",
+    "contact": "暂未提供",
+    "cover": "/api/place-photo/ChIJSSycXgDtYoYRLUBGZcSDfTs",
+    "placeId": "ChIJSSycXgDtYoYRLUBGZcSDfTs",
+    "mapQuery": "XIHU Supermercados Chinos Monterrey",
+    "lat": 25.8243687,
+    "lng": -100.2261316,
+    "category": "超市"
   }
 ]

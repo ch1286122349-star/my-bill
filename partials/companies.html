@@ -71,6 +71,7 @@
 
     let cachedLocation = null;
     let locationPromise = null;
+    let distanceReady = false;
 
     const getLocation = () => {
       if (cachedLocation) return Promise.resolve(cachedLocation);
@@ -86,6 +87,7 @@
               lat: pos.coords.latitude,
               lng: pos.coords.longitude,
             };
+            distanceReady = true;
             resolve(cachedLocation);
           },
           (err) => reject(err),
@@ -148,9 +150,11 @@
         });
         cards.forEach((card) => grid.appendChild(card));
       });
-      section.querySelectorAll('[data-distance]').forEach((el) => {
-        el.hidden = true;
-      });
+      if (!distanceReady) {
+        section.querySelectorAll('[data-distance]').forEach((el) => {
+          el.hidden = true;
+        });
+      }
     };
 
     const applyFilter = (section, filter) => {
@@ -238,5 +242,13 @@
     });
 
     setCityVisible('all');
+
+    getLocation()
+      .then((location) => {
+        citySections.forEach((section) => setDistances(section, location));
+      })
+      .catch((err) => {
+        console.warn('Failed to preload location:', err.message || err);
+      });
   })();
 </script>
