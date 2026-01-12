@@ -92,6 +92,7 @@ const COMPANIES_DATA_PATH = path.join(__dirname, 'data', 'companies.json');
 const GOOGLE_PLACES_API_KEY = (process.env.GOOGLE_PLACES_API_KEY || '').trim();
 const PLACES_API_ENABLED = String(process.env.PLACES_API_ENABLED || '').toLowerCase() === 'true';
 const PLACES_PREFETCH_ENABLED = String(process.env.PLACES_PREFETCH_ENABLED || '').toLowerCase() === 'true';
+const PLACE_DETAILS_CACHE_PATH = path.join(__dirname, 'data', 'place-details.json');
 const PLACES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const placesCache = new Map();
 const placeIdCache = new Map();
@@ -101,6 +102,25 @@ const PREFETCH_START_DELAY_MS = 15 * 1000;
 const PREFETCH_DELAY_MS = 250;
 let prefetchRunning = false;
 const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://mxchino.com').replace(/\/$/, '');
+let placeDetailsDiskCache = null;
+const loadPlaceDetailsDiskCache = () => {
+  if (placeDetailsDiskCache) return placeDetailsDiskCache;
+  try {
+    const raw = fs.readFileSync(PLACE_DETAILS_CACHE_PATH, 'utf8');
+    placeDetailsDiskCache = JSON.parse(raw);
+  } catch (err) {
+    placeDetailsDiskCache = {};
+  }
+  return placeDetailsDiskCache;
+};
+const savePlaceDetailsDiskCache = () => {
+  if (!placeDetailsDiskCache) return;
+  try {
+    fs.writeFileSync(PLACE_DETAILS_CACHE_PATH, JSON.stringify(placeDetailsDiskCache, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Failed to persist place details cache:', err.message);
+  }
+};
 
 const escapeHtml = (value) => String(value ?? '')
   .replace(/&/g, '&amp;')
@@ -418,6 +438,11 @@ const fetchPlaceDetails = async (placeId) => {
   if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY || !placeId) return null;
   const cached = getCachedValue(placesCache, placeId);
   if (cached) return cached;
+  const diskCache = loadPlaceDetailsDiskCache();
+  if (diskCache[placeId]) {
+    setCachedValue(placesCache, placeId, diskCache[placeId]);
+    return diskCache[placeId];
+  }
   const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
   url.searchParams.set('place_id', placeId);
   url.searchParams.set('fields', [
@@ -443,6 +468,8 @@ const fetchPlaceDetails = async (placeId) => {
       return null;
     }
     setCachedValue(placesCache, placeId, data.result);
+    diskCache[placeId] = data.result;
+    savePlaceDetailsDiskCache();
     return data.result;
   } catch (err) {
     console.warn('Places detail failed:', err.message);
@@ -505,12 +532,21 @@ const prefetchPlacesCache = async () => {
 };
 
 const getCompanyPlaceData = async (company) => {
-  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY) return null;
   const explicitPlaceId = String(company.placeId || company.place_id || '').trim();
   const query = String(company.mapQuery || company.name || '').trim();
   const placeId = explicitPlaceId || await fetchPlaceIdByQuery(query);
   if (!placeId) return null;
-  return fetchPlaceDetails(placeId);
+  const diskCache = loadPlaceDetailsDiskCache();
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY) {
+    return diskCache[placeId] || null;
+  }
+  const live = await fetchPlaceDetails(placeId);
+  if (live) {
+    diskCache[placeId] = live;
+    savePlaceDetailsDiskCache();
+    return live;
+  }
+  return diskCache[placeId] || null;
 };
 
 const buildMapEmbedUrl = (company, placeData) => {

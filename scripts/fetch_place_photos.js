@@ -19,6 +19,7 @@ if (!KEY) {
 
 const companiesPath = path.join(__dirname, '..', 'data', 'companies.json');
 const photoDir = path.join(__dirname, '..', 'image', 'place-photos');
+const placeDetailsPath = path.join(__dirname, '..', 'data', 'place-details.json');
 fs.mkdirSync(photoDir, { recursive: true });
 
 const maxArg = process.argv.find((arg) => arg.startsWith('--max='));
@@ -40,15 +41,18 @@ const fetchJson = async (url) => {
   return data;
 };
 
-const fetchPlacePhotos = async (placeId) => {
+const fetchPlacePhotos = async (placeId, diskCache) => {
   const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
   url.searchParams.set('place_id', placeId);
-  url.searchParams.set('fields', 'place_id,photos');
+  url.searchParams.set('fields', 'place_id,name,formatted_address,formatted_phone_number,opening_hours,rating,user_ratings_total,website,url,geometry,photos');
   url.searchParams.set('language', 'zh-CN');
   url.searchParams.set('key', KEY);
   const data = await fetchJson(url.toString());
   if (data.status !== 'OK') {
     throw new Error(`Details ${data.status} ${data.error_message || ''}`);
+  }
+  if (data.result) {
+    diskCache[placeId] = data.result;
   }
   return data.result?.photos || [];
 };
@@ -66,10 +70,16 @@ const fetchPhotoBinary = async (photoRef) => {
 };
 
 const main = async () => {
+  let placeDetailsCache = {};
+  try {
+    placeDetailsCache = JSON.parse(fs.readFileSync(placeDetailsPath, 'utf8'));
+  } catch (err) {
+    placeDetailsCache = {};
+  }
   console.log(`发现 ${placeIds.length} 个 placeId，开始下载（每个最多 ${MAX_PHOTOS} 张，已存在跳过）...`);
   for (const placeId of placeIds) {
     try {
-      const photos = await fetchPlacePhotos(placeId);
+      const photos = await fetchPlacePhotos(placeId, placeDetailsCache);
       const slice = photos.slice(0, Math.max(1, Math.min(MAX_PHOTOS, photos.length)));
       console.log(`- ${placeId} 详情 OK，照片 ${slice.length} 张`);
       let idx = 0;
@@ -92,6 +102,12 @@ const main = async () => {
       console.warn(`! ${placeId} 失败: ${err.message}`);
     }
     await sleep(200);
+  }
+  try {
+    fs.writeFileSync(placeDetailsPath, JSON.stringify(placeDetailsCache, null, 2), 'utf8');
+    console.log(`已更新本地详情缓存 ${placeDetailsPath}`);
+  } catch (err) {
+    console.warn('写入 place-details.json 失败:', err.message);
   }
   console.log('完成。可以关闭 Google API，前端会优先使用本地图片。');
 };
