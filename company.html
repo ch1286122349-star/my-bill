@@ -38,18 +38,20 @@
     (() => {
       const mapToggles = document.querySelectorAll('[data-map-toggle]');
       const mapEmbed = document.querySelector('[data-map-embed]');
-      const updateMapLabels = (expanded) => {
+      const updateMapLabels = (open) => {
         mapToggles.forEach((button) => {
           const label = button.dataset.mapLabel || '展开地图';
-          button.textContent = expanded ? '收起地图' : label;
+          button.textContent = open ? '收起地图' : label;
         });
       };
       if (mapToggles.length && mapEmbed) {
         mapToggles.forEach((button) => {
           button.addEventListener('click', () => {
-            const expanded = mapEmbed.classList.toggle('map-embed--expanded');
-            document.body.classList.toggle('map-expanded', expanded);
-            updateMapLabels(expanded);
+            const open = mapEmbed.classList.toggle('map-embed--open');
+            updateMapLabels(open);
+            if (open) {
+              mapEmbed.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
           });
         });
       }
@@ -123,6 +125,71 @@
           saveFavorites(next);
           updateFavorite(!exists);
         });
+      }
+
+      const galleryGrid = document.querySelector('.company-hero-grid[data-gallery]');
+      const galleryOpen = document.querySelector('[data-gallery-open]');
+      if (galleryGrid && galleryOpen) {
+        const images = (galleryGrid.dataset.gallery || '').split('|').map((item) => item.trim()).filter(Boolean);
+        if (images.length) {
+          const buildModal = (startIndex = 0) => {
+            let current = startIndex;
+            const modal = document.createElement('div');
+            modal.className = 'gallery-modal';
+            modal.innerHTML = `
+              <div class="gallery-modal__content">
+                <button class="gallery-modal__close" type="button" data-gallery-close>关闭</button>
+                <img class="gallery-modal__image" src="${images[current]}" alt="图集预览">
+                <div class="gallery-modal__nav">
+                  <button class="gallery-modal__btn" type="button" data-gallery-prev>上一张</button>
+                  <span>${current + 1} / ${images.length}</span>
+                  <button class="gallery-modal__btn" type="button" data-gallery-next>下一张</button>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(modal);
+            document.body.classList.add('gallery-open');
+
+            const img = modal.querySelector('.gallery-modal__image');
+            const counter = modal.querySelector('.gallery-modal__nav span');
+            const update = () => {
+              img.src = images[current];
+              counter.textContent = `${current + 1} / ${images.length}`;
+            };
+
+            const close = () => {
+              modal.remove();
+              document.body.classList.remove('gallery-open');
+              document.removeEventListener('keydown', onKeydown);
+            };
+
+            const prev = () => {
+              current = (current - 1 + images.length) % images.length;
+              update();
+            };
+
+            const next = () => {
+              current = (current + 1) % images.length;
+              update();
+            };
+
+            const onKeydown = (event) => {
+              if (event.key === 'Escape') close();
+              if (event.key === 'ArrowLeft') prev();
+              if (event.key === 'ArrowRight') next();
+            };
+
+            modal.addEventListener('click', (event) => {
+              if (event.target === modal) close();
+            });
+            modal.querySelector('[data-gallery-close]').addEventListener('click', close);
+            modal.querySelector('[data-gallery-prev]').addEventListener('click', prev);
+            modal.querySelector('[data-gallery-next]').addEventListener('click', next);
+            document.addEventListener('keydown', onKeydown);
+          };
+
+          galleryOpen.addEventListener('click', () => buildModal(0));
+        }
       }
     })();
   </script>

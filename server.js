@@ -782,25 +782,46 @@ const renderCompanyPage = async (company) => {
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
   const seo = buildCompanySeo(company, placeData);
   const safeCover = sanitizeCover(company.cover) || buildPlacePhotoUrl(placeId, 0);
+  const galleryImages = new Set();
+  const addGalleryImage = (value) => {
+    const raw = String(value || '').trim();
+    if (raw) galleryImages.add(raw);
+  };
+  addGalleryImage(safeCover);
   const heroStyle = safeCover
     ? ` style="background-image: linear-gradient(140deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.35)), url('${safeCover}')"`
     : '';
   const photoCount = Array.isArray(placeData?.photos) ? placeData.photos.length : 0;
+  const mapLinkForPhotos = safeMapLink || safePlaceUrl;
   const thumbTiles = [];
   if (placeId && photoCount > 1) {
-    const firstUrl = buildPlacePhotoUrl(placeId, 1);
-    if (firstUrl) {
-      thumbTiles.push(`<div class="company-hero-thumb" style="background-image: url('${firstUrl}')"></div>`);
-    }
-    const secondUrl = buildPlacePhotoUrl(placeId, 2);
-    if (secondUrl) {
-      thumbTiles.push(`<div class="company-hero-thumb" style="background-image: url('${secondUrl}')"></div>`);
+    const maxThumbs = 4;
+    const available = Math.max(1, photoCount - 1);
+    for (let i = 0; i < maxThumbs; i += 1) {
+      const photoIndex = 1 + (i % available);
+      const thumbUrl = buildPlacePhotoUrl(placeId, photoIndex);
+      if (!thumbUrl) continue;
+      addGalleryImage(thumbUrl);
+      if (mapLinkForPhotos) {
+        thumbTiles.push(
+          `<a class="company-hero-thumb company-hero-link" href="${mapLinkForPhotos}" target="_blank" rel="noopener" aria-label="在 Google 地图中查看" style="background-image: url('${thumbUrl}')"></a>`
+        );
+      } else {
+        thumbTiles.push(`<div class="company-hero-thumb" style="background-image: url('${thumbUrl}')"></div>`);
+      }
     }
   }
   const thumbHtml = thumbTiles.length
     ? `<div class="company-hero-thumbs">${thumbTiles.join('')}</div>`
     : '';
-  const heroHtml = `<div class="company-hero-grid${thumbTiles.length ? '' : ' company-hero-grid--single'}"><div class="company-hero"${heroStyle}></div>${thumbHtml}</div>`;
+  const heroTile = mapLinkForPhotos
+    ? `<a class="company-hero company-hero-link"${heroStyle} href="${mapLinkForPhotos}" target="_blank" rel="noopener" aria-label="在 Google 地图中查看"></a>`
+    : `<div class="company-hero"${heroStyle}></div>`;
+  const galleryAttr = galleryImages.size ? ` data-gallery="${escapeHtml(Array.from(galleryImages).join('|'))}"` : '';
+  const galleryButtonHtml = galleryImages.size > 1
+    ? '<button class="hero-gallery-btn" type="button" data-gallery-open>查看图集</button>'
+    : '';
+  const heroHtml = `<div class="company-hero-grid${thumbTiles.length ? '' : ' company-hero-grid--single'}"${galleryAttr}>${heroTile}${thumbHtml}${galleryButtonHtml}</div>`;
   const valueLineHtml = buildValueLineHtml(company, placeData);
   const valueSublineHtml = buildValueSublineHtml(placeData);
   const summaryLinesHtml = buildSummaryLinesHtml(company.summary);

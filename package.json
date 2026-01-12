@@ -4,8 +4,9 @@
   "description": "Simple contact/subscription form backend with SQLite persistence.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon --watch server.js --watch partials --watch site.css --watch home.html --watch companies.html --watch company.html --watch index.html --watch data/companies.json --ext js,html,css,json server.js"
+    "start": "npm run sitemap && node server.js",
+    "dev": "npm run sitemap && nodemon --watch server.js --watch partials --watch site.css --watch home.html --watch companies.html --watch company.html --watch index.html --watch data/companies.json --ext js,html,css,json server.js",
+    "sitemap": "node scripts/generate_sitemap.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
