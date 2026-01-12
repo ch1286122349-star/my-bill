@@ -254,7 +254,8 @@ const buildCompanySeo = (company, placeData) => {
   const slug = encodeURIComponent(String(company.slug || ''));
   const canonicalUrl = `${SITE_ORIGIN}/company/${slug}`;
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
-  const cover = sanitizeCover(company.cover) || buildPlacePhotoUrl(placeId, 0);
+  const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
+  const cover = localCover || sanitizeCover(company.cover) || buildPlacePhotoUrl(placeId, 0);
   const imageUrl = buildAbsoluteUrl(cover) || buildAbsoluteUrl('/apple-touch-icon.png');
   const schema = buildCompanyStructuredData(company, placeData, canonicalUrl, imageUrl, categoryLabel);
   const ogType = resolveOgType(schema['@type']);
@@ -660,11 +661,13 @@ const buildCompaniesHtml = () => {
   const renderCompanyCards = (items) => items.map((company) => {
     const safeName = escapeHtml(company.name);
     const safeSummary = escapeHtml(company.summary);
+    const placeId = String(company.placeId || company.place_id || '').trim();
+    const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
     const contactValue = String(company.contact || '').trim();
     const safeContact = escapeHtml(contactValue);
     const hasContact = contactValue && !/未提供|暂无/i.test(contactValue);
     const safeSlug = encodeURIComponent(String(company.slug || ''));
-    const safeCover = sanitizeCover(company.cover);
+    const safeCover = sanitizeCover(localCover || company.cover || buildPlacePhotoUrl(placeId, 0));
     const coverStyle = safeCover
       ? ` style=\"background-image: linear-gradient(140deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.35)), url('${safeCover}')\"`
       : '';
@@ -885,11 +888,9 @@ const renderCompanyPage = async (company) => {
   const mapLinkForPhotos = safeMapLink || safePlaceUrl;
   const thumbTiles = [];
   if (placeId && photoCount > 1) {
-    const available = Math.max(1, photoCount - 1); // 至少有1张可复用
-    const desiredThumbs = 4;
-    for (let i = 0; i < desiredThumbs; i += 1) {
-      const photoIndex = 1 + (i % available);
-      const thumbUrl = buildPlacePhotoUrl(placeId, photoIndex);
+    const maxThumbs = Math.min(4, Math.max(1, photoCount - 1));
+    for (let i = 1; i <= maxThumbs; i += 1) {
+      const thumbUrl = buildPlacePhotoUrl(placeId, i);
       if (!thumbUrl) continue;
       addGalleryImage(thumbUrl);
       if (mapLinkForPhotos) {
