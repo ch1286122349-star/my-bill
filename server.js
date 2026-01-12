@@ -90,6 +90,8 @@ try {
 
 const COMPANIES_DATA_PATH = path.join(__dirname, 'data', 'companies.json');
 const GOOGLE_PLACES_API_KEY = (process.env.GOOGLE_PLACES_API_KEY || '').trim();
+const PLACES_API_ENABLED = String(process.env.PLACES_API_ENABLED || '').toLowerCase() === 'true';
+const PLACES_PREFETCH_ENABLED = String(process.env.PLACES_PREFETCH_ENABLED || '').toLowerCase() === 'true';
 const PLACES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const placesCache = new Map();
 const placeIdCache = new Map();
@@ -106,6 +108,16 @@ const escapeHtml = (value) => String(value ?? '')
   .replace(/>/g, '&gt;')
   .replace(/\"/g, '&quot;')
   .replace(/'/g, '&#39;');
+
+const PLACE_PHOTO_DIR = path.join(__dirname, 'image', 'place-photos');
+const ensurePlacePhotoDir = () => {
+  try {
+    fs.mkdirSync(PLACE_PHOTO_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('Could not create place photo dir:', err.message);
+  }
+};
+ensurePlacePhotoDir();
 
 const sanitizeCover = (value) => {
   const raw = String(value ?? '').trim();
@@ -331,7 +343,21 @@ const buildValueSublineHtml = (placeData) => {
   return `<div class="company-value-subline">${parts.join('')}</div>`;
 };
 
+const getLocalPlacePhoto = (placeId, index = 0) => {
+  const safeId = String(placeId || '').trim();
+  if (!safeId) return null;
+  const fileName = index > 0 ? `${safeId}-${index}.jpg` : `${safeId}.jpg`;
+  const abs = path.join(PLACE_PHOTO_DIR, fileName);
+  if (fs.existsSync(abs)) {
+    return { abs, url: `/image/place-photos/${fileName}` };
+  }
+  return null;
+};
+
 const buildPlacePhotoUrl = (placeId, index = 0) => {
+  const local = getLocalPlacePhoto(placeId, index);
+  if (local) return local.url;
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY) return '';
   const safeId = String(placeId || '').trim();
   if (!safeId) return '';
   const safeIndex = Number.isInteger(index) && index > 0 ? `/${index}` : '';
@@ -362,7 +388,7 @@ const fetchJson = async (url, options) => {
 };
 
 const fetchPlaceIdByQuery = async (query) => {
-  if (!GOOGLE_PLACES_API_KEY || !query) return '';
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY || !query) return '';
   const cached = getCachedValue(placeIdCache, query);
   if (cached) return cached;
   const url = new URL('https://maps.googleapis.com/maps/api/place/findplacefromtext/json');
@@ -389,7 +415,7 @@ const fetchPlaceIdByQuery = async (query) => {
 };
 
 const fetchPlaceDetails = async (placeId) => {
-  if (!GOOGLE_PLACES_API_KEY || !placeId) return null;
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY || !placeId) return null;
   const cached = getCachedValue(placesCache, placeId);
   if (cached) return cached;
   const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
@@ -425,7 +451,7 @@ const fetchPlaceDetails = async (placeId) => {
 };
 
 const fetchPlacePhoto = async (placeId, index = 0) => {
-  if (!GOOGLE_PLACES_API_KEY || !placeId) return null;
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY || !placeId) return null;
   const normalizedIndex = Number.isInteger(index) && index >= 0 ? index : 0;
   const cacheKey = `${placeId}:${normalizedIndex}`;
   const cached = getCachedValue(placePhotoCache, cacheKey);
@@ -455,7 +481,7 @@ const fetchPlacePhoto = async (placeId, index = 0) => {
 };
 
 const prefetchPlacesCache = async () => {
-  if (!GOOGLE_PLACES_API_KEY || prefetchRunning) return;
+  if (!PLACES_PREFETCH_ENABLED || !PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY || prefetchRunning) return;
   prefetchRunning = true;
   try {
     const companies = loadCompaniesData();
@@ -479,7 +505,7 @@ const prefetchPlacesCache = async () => {
 };
 
 const getCompanyPlaceData = async (company) => {
-  if (!GOOGLE_PLACES_API_KEY) return null;
+  if (!PLACES_API_ENABLED || !GOOGLE_PLACES_API_KEY) return null;
   const explicitPlaceId = String(company.placeId || company.place_id || '').trim();
   const query = String(company.mapQuery || company.name || '').trim();
   const placeId = explicitPlaceId || await fetchPlaceIdByQuery(query);
@@ -492,7 +518,7 @@ const buildMapEmbedUrl = (company, placeData) => {
   if (embed) return embed;
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
   const query = String(placeData?.name || company.mapQuery || '').trim();
-  if (GOOGLE_PLACES_API_KEY && (placeId || query)) {
+  if (PLACES_API_ENABLED && GOOGLE_PLACES_API_KEY && (placeId || query)) {
     const base = 'https://www.google.com/maps/embed/v1/place';
     const key = encodeURIComponent(GOOGLE_PLACES_API_KEY);
     const q = placeId ? `place_id:${placeId}` : query;
@@ -1160,7 +1186,7 @@ app.get('/company/:slug', async (req, res) => {
 app.get('/api/place-photo/:placeId/:index?', async (req, res) => {
   const placeId = String(req.params.placeId || '').trim();
   const index = Number.parseInt(req.params.index || '0', 10);
-  if (!placeId || !GOOGLE_PLACES_API_KEY) {
+  if (!PLACES_API_ENABLED || !placeId || !GOOGLE_PLACES_API_KEY) {
     return res.status(404).send('Not found');
   }
   const photo = await fetchPlacePhoto(placeId, Number.isNaN(index) ? 0 : index);
@@ -1182,7 +1208,7 @@ app.get('*', (_req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`DB file at ${DB_PATH}`);
-  if (GOOGLE_PLACES_API_KEY) {
+  if (PLACES_PREFETCH_ENABLED && PLACES_API_ENABLED && GOOGLE_PLACES_API_KEY) {
     setTimeout(() => {
       prefetchPlacesCache();
       setInterval(prefetchPlacesCache, PREFETCH_INTERVAL_MS);
