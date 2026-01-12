@@ -885,9 +885,11 @@ const renderCompanyPage = async (company) => {
   const mapLinkForPhotos = safeMapLink || safePlaceUrl;
   const thumbTiles = [];
   if (placeId && photoCount > 1) {
-    const maxThumbs = Math.min(4, Math.max(1, photoCount - 1));
-    for (let i = 1; i <= maxThumbs; i += 1) {
-      const thumbUrl = buildPlacePhotoUrl(placeId, i);
+    const available = Math.max(1, photoCount - 1); // 至少有1张可复用
+    const desiredThumbs = 4;
+    for (let i = 0; i < desiredThumbs; i += 1) {
+      const photoIndex = 1 + (i % available);
+      const thumbUrl = buildPlacePhotoUrl(placeId, photoIndex);
       if (!thumbUrl) continue;
       addGalleryImage(thumbUrl);
       if (mapLinkForPhotos) {
