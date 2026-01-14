@@ -42,50 +42,12 @@
   <div class="page">
     <main class="hero">
       <div>
-        <div class="eyebrow">墨西哥中文网</div>
-        <h1>让你的业务被更多华人看见</h1>
-        <p class="muted">无论您从事工程制造、叉车及设备租赁、办公用品、食品供应、物流仓储，还是其他在墨西哥本地开展的业务，均可联系站长发布信息。只要您在墨西哥，站长将协助您把业务、服务或合作需求展示在墨西哥中文网。</p>
-      </div>
-      <div class="hero-card">
-        <div class="contact-head">
-          <h2>现在联系站长，让你的业务被看见</h2>
+        <h1>墨西哥中文网</h1>
+        <h2 class="hero-subtitle">墨西哥华人商家与中资企业导航</h2>
+        <div class="hero-actions">
+          <a class="btn primary" href="/restaurants">墨西哥中餐厅</a>
+          <a class="btn ghost" href="/enterprises">墨西哥中资企业</a>
         </div>
-        <div class="contact-shortcuts contact-shortcuts--compact">
-          <div class="contact-shortcut contact-shortcut--wechat">
-            <div class="contact-shortcut__meta">
-              <span class="contact-shortcut__label">站长微信</span>
-              <strong class="contact-shortcut__value">Ch1286122349</strong>
-            </div>
-            <button type="button" class="btn primary contact-shortcut__btn" data-copy="Ch1286122349">一键复制</button>
-          </div>
-          <div class="contact-shortcut contact-shortcut--wa" id="wa-box">
-            <div class="contact-shortcut__meta">
-              <span class="contact-shortcut__label">快速联系</span>
-              <span class="contact-shortcut__hint">WhatsApp</span>
-            </div>
-            <a id="wa-link" class="btn primary contact-shortcut__btn" target="_blank" rel="noopener">打开 WhatsApp</a>
-            <div class="contact-shortcut__text wa-text" id="wa-text"></div>
-          </div>
-        </div>
-        <form action="#" method="post">
-          <div class="form-grid form-grid--compact">
-            <div class="field">
-              <label for="contact">联系方式 *</label>
-              <input id="contact" name="contact" type="text" required placeholder="微信号 / WhatsApp">
-            </div>
-
-            <div class="field field--span-2">
-              <label for="details">主题 *</label>
-              <textarea id="details" name="details" required placeholder="简要说明你的主题或需求"></textarea>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn primary">发送</button>
-            <div class="note muted">提交后我们会在 1-2 个工作日内联系你。</div>
-          </div>
-          <div class="status" id="form-status" aria-live="polite"></div>
-        </form>
       </div>
     </main>
     <section class="page-section">
@@ -93,103 +55,6 @@
     </section>
 
   </div>
-  <script>
-    const form = document.querySelector('.hero-card form');
-    if (form) {
-      const statusEl = document.getElementById('form-status');
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const waBox = document.getElementById('wa-box');
-      const waLink = document.getElementById('wa-link');
-      const waText = document.getElementById('wa-text');
-      const whatsappNumber = '528111777774'; // +52 8111777774
-      waLink.href = `https://wa.me/${whatsappNumber}`;
-      const apiBase = window.API_BASE
-        || (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
-
-      const showStatus = (msg, type = 'ok') => {
-        statusEl.textContent = msg;
-        statusEl.className = `status ${type}`;
-      };
-
-      const buildWhatsAppMessage = (data) => {
-        const parts = [
-          data.contact ? `联系方式：${data.contact}` : '',
-          data.details ? `主题：${data.details}` : '',
-        ].filter(Boolean);
-        return `来自网站表单的新提交：\n${parts.join('\n')}`;
-      };
-
-      const updateWhatsAppBlock = (data) => {
-        const message = buildWhatsAppMessage(data);
-        waText.textContent = '';
-        waLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-        waBox.hidden = false;
-      };
-
-      const parseJsonSafe = async (res) => {
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          return { ok: false, message: '服务未返回 JSON，可能后端未启动' };
-        }
-        try {
-          return await res.json();
-        } catch (err) {
-          return { ok: false, message: '解析响应失败，检查后端服务' };
-        }
-      };
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        showStatus('提交中…', 'ok');
-        submitBtn.disabled = true;
-
-        const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
-
-        try {
-          const res = await fetch(`${apiBase}/api/submit`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-
-          const data = await parseJsonSafe(res);
-          if (!res.ok || !data.ok) throw new Error(data.message || '提交失败，请确认已运行 npm start');
-
-          showStatus('提交成功！', 'ok');
-          updateWhatsAppBlock(payload);
-          form.reset();
-        } catch (err) {
-          showStatus(err.message || '网络异常，稍后再试', 'error');
-        } finally {
-          submitBtn.disabled = false;
-        }
-      });
-
-      const copyButtons = document.querySelectorAll('.page .contact-shortcuts [data-copy]');
-      copyButtons.forEach((button) => {
-        button.addEventListener('click', async () => {
-          const value = button.dataset.copy || '';
-          if (!value) return;
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(value);
-            const original = button.textContent;
-            button.textContent = '已复制';
-            window.setTimeout(() => {
-              button.textContent = original;
-            }, 1600);
-          }
-        });
-      });
-
-      waLink.addEventListener('click', (e) => {
-        if (!waLink.href) return;
-        const targetUrl = waLink.href;
-        e.preventDefault();
-        window.open(targetUrl, '_blank', 'noopener');
-      });
-    }
-  </script>
   <!--FOOTER-->
 </body>
 </html>

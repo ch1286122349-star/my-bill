@@ -1,4 +1,10 @@
-<section class="companies-page" id="companies">
+<section class="companies-page enterprises-page" id="enterprises">
+  <section class="companies-hero">
+    <div class="companies-intro">
+      <h1>墨西哥中资企业导航</h1>
+    </div>
+  </section>
+
   <section class="city-nav" aria-label="城市导航">
     <!--COMPANY_NAV-->
   </section>
@@ -220,23 +226,12 @@
 
       filterButtons.forEach((button) => {
         button.addEventListener('click', () => {
+          const value = button.dataset.filter || 'all';
+          const scope = button.dataset.filterScope || '';
           filterButtons.forEach((btn) => btn.classList.toggle('is-active', btn === button));
-          applyFilter(section, {
-            value: button.dataset.filter || 'all',
-            scope: button.dataset.filterScope || 'all',
-          });
+          applyFilter(section, { value, scope });
         });
       });
     });
-
-    setCityVisible('all');
-
-    getLocation()
-      .then((location) => {
-        citySections.forEach((section) => setDistances(section, location));
-      })
-      .catch((err) => {
-        console.warn('Failed to preload location:', err.message || err);
-      });
   })();
 </script>

@@ -24,17 +24,63 @@ const escapeXml = (value) => String(value || '')
   .replace(/'/g, '&apos;');
 
 const buildUrl = (slug) => `${baseUrl}/company/${encodeURIComponent(slug)}`;
+const RESTAURANT_CITY_DEFS = [
+  {
+    slug: 'mexico-city',
+    aliases: ['墨西哥城', '墨西哥市', 'Mexico City', 'Ciudad de Mexico', 'Ciudad de México', 'CDMX'],
+  },
+  { slug: 'monterrey', aliases: ['蒙特雷', 'Monterrey'] },
+  { slug: 'guadalajara', aliases: ['瓜达拉哈拉', 'Guadalajara'] },
+  { slug: 'puebla', aliases: ['普埃布拉', 'Puebla'] },
+];
+const normalizeCityName = (value) => String(value || '').trim().toLowerCase();
+const RESTAURANT_CITY_ALIAS_MAP = new Map();
+RESTAURANT_CITY_DEFS.forEach((city) => {
+  city.aliases.forEach((alias) => {
+    RESTAURANT_CITY_ALIAS_MAP.set(normalizeCityName(alias), city.slug);
+  });
+});
+const resolveRestaurantCitySlug = (value) => RESTAURANT_CITY_ALIAS_MAP.get(normalizeCityName(value)) || '';
+const isRestaurantCompany = (company) => {
+  const industry = String(company.industry || '').trim();
+  if (industry === '餐饮与服务') return true;
+  const category = String(company.category || '').trim();
+  const summary = String(company.summary || '').trim();
+  const name = String(company.name || '').trim();
+  const combined = `${name} ${summary} ${category}`.toLowerCase();
+  return /中餐|火锅|面馆|烧烤|饮品|茶|咖啡|川菜|湘菜|粤菜|烤鸭|饺子|包子|牛肉面|拉面/.test(combined);
+};
 
-const companies = loadCompanies()
+const allCompanies = loadCompanies();
+const companies = allCompanies
   .filter((company) => company && company.slug)
   .map((company) => String(company.slug).trim())
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b));
 
+const restaurantCounts = new Map(RESTAURANT_CITY_DEFS.map((city) => [city.slug, 0]));
+allCompanies.forEach((company) => {
+  if (!company) return;
+  if (!isRestaurantCompany(company)) return;
+  const slug = resolveRestaurantCitySlug(company.city);
+  if (!slug) return;
+  restaurantCounts.set(slug, (restaurantCounts.get(slug) || 0) + 1);
+});
+const restaurantCitySlugs = Array.from(restaurantCounts.entries())
+  .filter(([, count]) => count > 0)
+  .map(([slug]) => slug);
+
 const today = new Date().toISOString().split('T')[0];
 const urls = [
   { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'weekly' },
   { loc: `${baseUrl}/companies`, priority: '0.8', changefreq: 'weekly' },
+  { loc: `${baseUrl}/enterprises`, priority: '0.8', changefreq: 'weekly' },
+  { loc: `${baseUrl}/restaurants`, priority: '0.8', changefreq: 'weekly' },
+  ...restaurantCitySlugs.map((slug) => ({
+    loc: `${baseUrl}/restaurants/${slug}`,
+    priority: '0.7',
+    changefreq: 'weekly',
+  })),
   ...companies.map((slug) => ({
     loc: buildUrl(slug),
     priority: '0.6',

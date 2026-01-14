@@ -36,25 +36,27 @@
   <!--FOOTER-->
   <script>
     (() => {
-      const mapToggles = document.querySelectorAll('[data-map-toggle]');
-      const mapEmbed = document.querySelector('[data-map-embed]');
-      const updateMapLabels = (open) => {
-        mapToggles.forEach((button) => {
-          const label = button.dataset.mapLabel || '展开地图';
-          button.textContent = open ? '收起地图' : label;
+    const mapToggles = document.querySelectorAll('[data-map-toggle]');
+    const mapEmbed = document.querySelector('[data-map-embed]');
+    const updateMapLabels = (open) => {
+      mapToggles.forEach((button) => {
+        const label = button.dataset.mapLabel || '展开地图';
+        button.textContent = open ? '收起地图' : label;
+      });
+    };
+    if (mapToggles.length && mapEmbed) {
+      const initialOpen = mapEmbed.classList.contains('map-embed--open');
+      updateMapLabels(initialOpen);
+      mapToggles.forEach((button) => {
+        button.addEventListener('click', () => {
+          const open = mapEmbed.classList.toggle('map-embed--open');
+          updateMapLabels(open);
+          if (open) {
+            mapEmbed.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         });
-      };
-      if (mapToggles.length && mapEmbed) {
-        mapToggles.forEach((button) => {
-          button.addEventListener('click', () => {
-            const open = mapEmbed.classList.toggle('map-embed--open');
-            updateMapLabels(open);
-            if (open) {
-              mapEmbed.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          });
-        });
-      }
+      });
+    }
 
       const shareBtn = document.querySelector('[data-share]');
       if (shareBtn) {

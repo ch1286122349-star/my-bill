@@ -1,6 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
@@ -10,6 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
 const isDev = process.env.NODE_ENV !== 'production';
+const ANALYTICS_ENABLED = String(process.env.ANALYTICS_ENABLED || 'true').toLowerCase() !== 'false';
+const ANALYTICS_TOKEN = String(process.env.ANALYTICS_TOKEN || '').trim();
+const ANALYTICS_COOKIE_NAME = 'mx_vid';
+const ANALYTICS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const ANALYTICS_UA_MAX_LENGTH = 300;
+const ANALYTICS_REFERRER_MAX_LENGTH = 300;
 
 if (isDev) {
   const livereload = require('livereload');
@@ -29,6 +36,7 @@ if (isDev) {
 
 // Initialize SQLite and ensure table exists.
 const db = new sqlite3.Database(DB_PATH);
+let insertPageViewStmt = null;
 db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS submissions (
@@ -42,11 +50,132 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`
   );
+  db.run(
+    `CREATE TABLE IF NOT EXISTS page_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      visitor_id TEXT NOT NULL,
+      path TEXT NOT NULL,
+      referrer TEXT,
+      user_agent TEXT,
+      ip_hash TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`
+  );
+  db.run('CREATE INDEX IF NOT EXISTS idx_page_views_created_at ON page_views(created_at)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_page_views_path ON page_views(path)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_page_views_visitor ON page_views(visitor_id)');
+  insertPageViewStmt = db.prepare(
+    `INSERT INTO page_views (visitor_id, path, referrer, user_agent, ip_hash)
+     VALUES (?, ?, ?, ?, ?)`
+  );
 });
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const parseCookies = (headerValue) => {
+  const cookies = {};
+  if (!headerValue) return cookies;
+  headerValue.split(';').forEach((item) => {
+    const index = item.indexOf('=');
+    if (index === -1) return;
+    const name = item.slice(0, index).trim();
+    const value = item.slice(index + 1).trim();
+    if (name) cookies[name] = decodeURIComponent(value);
+  });
+  return cookies;
+};
+
+const isLocalRequest = (req) => {
+  const ip = String(req.ip || '');
+  return ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1';
+};
+
+const isAnalyticsAuthorized = (req) => {
+  if (!ANALYTICS_TOKEN) {
+    return isLocalRequest(req);
+  }
+  const header = String(req.get('authorization') || '');
+  const token = header.startsWith('Bearer ')
+    ? header.slice('Bearer '.length).trim()
+    : String(req.query.token || '').trim();
+  return token && token === ANALYTICS_TOKEN;
+};
+
+const shouldTrackRequest = (req) => {
+  if (!ANALYTICS_ENABLED) return false;
+  if (req.method !== 'GET') return false;
+  const requestPath = String(req.path || '');
+  if (!requestPath) return false;
+  if (requestPath.startsWith('/api')) return false;
+  if (requestPath.startsWith('/assets') || requestPath.startsWith('/image')) return false;
+  const ext = path.extname(requestPath).toLowerCase();
+  if (ext && [
+    '.css', '.js', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.ico', '.map',
+    '.json', '.txt', '.xml', '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.zip',
+  ].includes(ext)) {
+    return false;
+  }
+  return true;
+};
+
+const ensureVisitorId = (req, res) => {
+  const cookies = parseCookies(req.headers.cookie || '');
+  let visitorId = cookies[ANALYTICS_COOKIE_NAME];
+  if (!visitorId || !/^[0-9a-f-]{36}$/i.test(visitorId)) {
+    visitorId = crypto.randomUUID();
+    const cookieParts = [
+      `${ANALYTICS_COOKIE_NAME}=${encodeURIComponent(visitorId)}`,
+      `Max-Age=${ANALYTICS_COOKIE_MAX_AGE}`,
+      'Path=/',
+      'SameSite=Lax',
+      'HttpOnly',
+    ];
+    const forwardedProto = String(req.headers['x-forwarded-proto'] || '');
+    const isSecure = req.secure || forwardedProto.includes('https');
+    if (isSecure) {
+      cookieParts.push('Secure');
+    }
+    res.append('Set-Cookie', cookieParts.join('; '));
+  }
+  return visitorId;
+};
+
+const hashIp = (value) => {
+  if (!value) return '';
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+};
+
+const formatLocalDate = (date) => {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+const normalizeDateParam = (value) => {
+  const raw = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return formatLocalDate(new Date());
+};
+
+app.use((req, res, next) => {
+  if (!shouldTrackRequest(req)) return next();
+  const visitorId = ensureVisitorId(req, res);
+  const requestPath = String(req.path || '/');
+  const referrer = String(req.get('referer') || '').slice(0, ANALYTICS_REFERRER_MAX_LENGTH);
+  const userAgent = String(req.get('user-agent') || '').slice(0, ANALYTICS_UA_MAX_LENGTH);
+  const ipHash = hashIp(req.ip || req.connection?.remoteAddress || '');
+  res.on('finish', () => {
+    if (res.statusCode < 200 || res.statusCode >= 400) return;
+    if (!insertPageViewStmt) return;
+    insertPageViewStmt.run([visitorId, requestPath, referrer, userAgent, ipHash], (err) => {
+      if (err) {
+        console.error('Analytics insert failed:', err.message);
+      }
+    });
+  });
+  return next();
+});
 
 const HEADER_PATH = path.join(__dirname, 'partials', 'header.html');
 let headerHtml = '';
@@ -72,6 +201,22 @@ try {
   console.warn('Companies partial not found:', err.message);
 }
 
+const ENTERPRISES_TEMPLATE_PATH = path.join(__dirname, 'partials', 'enterprises.html');
+let enterprisesTemplate = '';
+try {
+  enterprisesTemplate = fs.readFileSync(ENTERPRISES_TEMPLATE_PATH, 'utf8');
+} catch (err) {
+  console.warn('Enterprises partial not found:', err.message);
+}
+
+const RESTAURANTS_TEMPLATE_PATH = path.join(__dirname, 'partials', 'restaurants.html');
+let restaurantsTemplate = '';
+try {
+  restaurantsTemplate = fs.readFileSync(RESTAURANTS_TEMPLATE_PATH, 'utf8');
+} catch (err) {
+  console.warn('Restaurants partial not found:', err.message);
+}
+
 const FOOTER_PATH = path.join(__dirname, 'partials', 'footer.html');
 let footerHtml = '';
 try {
@@ -86,6 +231,22 @@ try {
   companyTemplate = fs.readFileSync(COMPANY_TEMPLATE_PATH, 'utf8');
 } catch (err) {
   console.warn('Company template not found:', err.message);
+}
+
+const ENTERPRISES_PAGE_TEMPLATE_PATH = path.join(__dirname, 'enterprises.html');
+let enterprisesPageTemplate = '';
+try {
+  enterprisesPageTemplate = fs.readFileSync(ENTERPRISES_PAGE_TEMPLATE_PATH, 'utf8');
+} catch (err) {
+  console.warn('Enterprises template not found:', err.message);
+}
+
+const RESTAURANTS_PAGE_TEMPLATE_PATH = path.join(__dirname, 'restaurants.html');
+let restaurantsPageTemplate = '';
+try {
+  restaurantsPageTemplate = fs.readFileSync(RESTAURANTS_PAGE_TEMPLATE_PATH, 'utf8');
+} catch (err) {
+  console.warn('Restaurants template not found:', err.message);
 }
 
 const COMPANIES_DATA_PATH = path.join(__dirname, 'data', 'companies.json');
@@ -591,11 +752,15 @@ const buildMapEmbedUrl = (company, placeData) => {
   return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
 };
 
-const buildCompaniesHtml = () => {
-  if (!companiesTemplate) return '';
-  const companies = loadCompaniesData();
+const buildCompaniesHtml = (options = {}) => {
+  const template = options.template || companiesTemplate;
+  if (!template) return '';
+  const allCompanies = loadCompaniesData();
+  const companies = typeof options.filter === 'function'
+    ? allCompanies.filter(options.filter)
+    : allCompanies;
   if (!companies.length) {
-    return companiesTemplate
+    return template
       .replace('<!--COMPANY_NAV-->', '')
       .replace('<!--COMPANY_SECTIONS-->', '<p class=\"muted\">暂无企业数据。</p>');
   }
@@ -824,10 +989,13 @@ const buildCompaniesHtml = () => {
     );
   }).join('');
 
-  return companiesTemplate
+  return template
     .replace('<!--COMPANY_NAV-->', navHtml)
     .replace('<!--COMPANY_SECTIONS-->', sectionsHtml);
 };
+
+const isRestaurantCompany = (company) => String(company?.industry || '').trim() === '餐饮与服务';
+const isEnterpriseCompany = (company) => String(company?.industry || '').trim() === '中资企业';
 
 const loadCompaniesData = () => {
   try {
@@ -837,6 +1005,18 @@ const loadCompaniesData = () => {
   } catch (err) {
     console.warn('Companies data not found or invalid:', err.message);
     return [];
+  }
+};
+
+const WEBSITE_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="2"></circle><path fill="currentColor" d="M2 12h20M12 2a15.97 15.97 0 00-4 12 15.97 15.97 0 004 12M12 2a15.97 15.97 0 014 12 15.97 15.97 0 01-4 12M8.5 4.75a12.86 12.86 0 00-2 7.25 12.86 12.86 0 002 7.25m7-14.5a12.86 12.86 0 012 7.25 12.86 12.86 0 01-2 7.25"></path></svg>';
+const PHONE_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21 11.72 11.72 0 003.66.58 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.8a1 1 0 011 1 11.72 11.72 0 00.58 3.66 1 1 0 01-.21 1.11z"></path></svg>';
+const formatWebsiteLabel = (value) => {
+  if (!value) return '';
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname.replace(/^www\\./i, '') || parsed.hostname;
+  } catch (err) {
+    return value;
   }
 };
 
@@ -851,6 +1031,32 @@ const renderPage = (fileName) => {
     .replace('<!--FOOTER-->', footerHtml || '');
 };
 
+const renderEnterprisesPage = () => {
+  if (!enterprisesPageTemplate || !enterprisesTemplate) return '';
+  const enterprisesHtml = buildCompaniesHtml({
+    template: enterprisesTemplate,
+    filter: isEnterpriseCompany,
+  });
+  return enterprisesPageTemplate
+    .replace('<!--HEAD-->', headHtml || '')
+    .replace('<!--COMPANIES-->', enterprisesHtml || '')
+    .replace('<!--HEADER-->', headerHtml || '')
+    .replace('<!--FOOTER-->', footerHtml || '');
+};
+
+const renderRestaurantsPage = () => {
+  if (!restaurantsPageTemplate || !restaurantsTemplate) return '';
+  const restaurantsHtml = buildCompaniesHtml({
+    template: restaurantsTemplate,
+    filter: isRestaurantCompany,
+  });
+  return restaurantsPageTemplate
+    .replace('<!--HEAD-->', headHtml || '')
+    .replace('<!--COMPANIES-->', restaurantsHtml || '')
+    .replace('<!--HEADER-->', headerHtml || '')
+    .replace('<!--FOOTER-->', footerHtml || '');
+};
+
 const renderCompanyPage = async (company) => {
   if (!companyTemplate) return '';
   const placeData = await getCompanyPlaceData(company);
@@ -861,8 +1067,8 @@ const renderCompanyPage = async (company) => {
   const contactValue = String(company.contact || '').trim();
   const safeContact = escapeHtml(contactValue);
   const safeDetail = escapeHtml(company.detail);
-  const placePhone = placeData?.formatted_phone_number || '';
-  const placeWebsite = sanitizeUrl(placeData?.website);
+  const placePhone = placeData?.formatted_phone_number || company.phone || '';
+  const placeWebsite = sanitizeUrl(placeData?.website || company.website);
   const safePlaceUrl = sanitizeUrl(placeData?.url);
   const safeMapLink = sanitizeUrl(company.mapLink || company.mapUrl || company.map) || safePlaceUrl;
   const mapEmbedUrl = buildMapEmbedUrl(company, placeData);
@@ -923,10 +1129,10 @@ const renderCompanyPage = async (company) => {
   const encodedContact = hasContact ? encodeURIComponent(contactValue) : '';
   const telLink = placePhone ? `tel:${placePhone.replace(/\s+/g, '')}` : '';
   const actionButtons = [];
-  const primaryAction = safeMapLink ? 'map' : (placePhone ? 'phone' : '');
-  if (placePhone) {
+  const primaryAction = safeMapLink ? 'map' : (placeWebsite ? 'website' : '');
+  if (placeWebsite) {
     actionButtons.push(
-      `<a class="action-btn${primaryAction === 'phone' ? ' primary' : ''}" href="${telLink}">一键拨号</a>`
+      `<a class="action-btn${primaryAction === 'website' ? ' primary' : ''}" href="${placeWebsite}" target="_blank" rel="noopener">打开官网</a>`
     );
   }
   if (safeMapLink) {
@@ -940,16 +1146,29 @@ const renderCompanyPage = async (company) => {
   if (hasContact) {
     actionButtons.push(`<button class="action-btn" type="button" data-copy="${encodedContact}">复制微信/WhatsApp</button>`);
   }
+  const contactLinkItems = [];
+  if (placePhone) {
+    const encodedPhone = encodeURIComponent(placePhone);
+    contactLinkItems.push(
+      `<div class="company-contact-card company-contact-card--phone">` +
+      `<div class="company-contact-card__text">` +
+      `<span class="company-contact-card__label">电话</span>` +
+      `<strong>${escapeHtml(placePhone)}</strong>` +
+      `</div>` +
+      `<button class="company-contact-card__btn" type="button" data-copy="${encodedPhone}">复制</button>` +
+      `</div>`
+    );
+  }
+  const contactLinksHtml = contactLinkItems.length
+    ? `<div class="company-contact-links">${contactLinkItems.join('')}</div>`
+    : '';
   const actionCardHtml = (
     `<div class="company-detail-contact">` +
     `<h2>快速行动</h2>` +
     `<div class="action-buttons">${actionButtons.join('')}</div>` +
+    `${contactLinksHtml}` +
     `<div class="action-meta">` +
     (hasContact ? `<div><span>微信/WhatsApp</span><strong>${safeContact}</strong></div>` : '') +
-    `<div><span>电话</span><strong>${placePhone ? escapeHtml(placePhone) : '暂未提供'}</strong></div>` +
-    (placeWebsite
-      ? `<div><span>官网</span><a href="${placeWebsite}" target="_blank" rel="noopener">${escapeHtml(placeWebsite)}</a></div>`
-      : '') +
     `</div>` +
     `</div>`
   );
@@ -990,7 +1209,7 @@ const renderCompanyPage = async (company) => {
       `<div class="map-head"><h2>位置</h2>${mapActions ? `<div class="map-actions">${mapActions}</div>` : ''}</div>` +
       mapMetaHtml +
       (mapEmbedUrl
-        ? `<div class="map-embed" data-map-embed><button class="map-close" type="button" data-map-toggle data-map-label="收起地图">收起地图</button><iframe title="Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${mapEmbedUrl}"></iframe></div>`
+        ? `<div class="map-embed map-embed--open" data-map-embed><button class="map-close" type="button" data-map-toggle data-map-label="收起地图">收起地图</button><iframe title="Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${mapEmbedUrl}"></iframe></div>`
         : '') +
       `</div>`
     )
@@ -1219,6 +1438,66 @@ app.get('/api/submissions', (req, res) => {
   );
 });
 
+app.get('/api/analytics', (req, res) => {
+  if (!isAnalyticsAuthorized(req)) {
+    return res.status(401).json({ ok: false, message: '未授权' });
+  }
+  const date = normalizeDateParam(req.query.date);
+  const limit = Math.min(parseInt(req.query.limit, 10) || 200, 1000);
+  const byPageSql = `
+    SELECT path, COUNT(*) AS pv, COUNT(DISTINCT visitor_id) AS uv
+    FROM page_views
+    WHERE date(created_at, 'localtime') = ?
+    GROUP BY path
+    ORDER BY pv DESC
+  `;
+  const byHourSql = `
+    SELECT strftime('%H:00', datetime(created_at, 'localtime')) AS hour,
+           COUNT(*) AS pv,
+           COUNT(DISTINCT visitor_id) AS uv
+    FROM page_views
+    WHERE date(created_at, 'localtime') = ?
+    GROUP BY hour
+    ORDER BY hour ASC
+  `;
+  const recentSql = `
+    SELECT datetime(created_at, 'localtime') AS time,
+           path,
+           referrer,
+           visitor_id
+    FROM page_views
+    WHERE date(created_at, 'localtime') = ?
+    ORDER BY datetime(created_at, 'localtime') DESC
+    LIMIT ?
+  `;
+
+  db.all(byPageSql, [date], (err, byPage) => {
+    if (err) {
+      console.error('Analytics query failed:', err);
+      return res.status(500).json({ ok: false, message: '统计失败' });
+    }
+    return db.all(byHourSql, [date], (hourErr, byHour) => {
+      if (hourErr) {
+        console.error('Analytics query failed:', hourErr);
+        return res.status(500).json({ ok: false, message: '统计失败' });
+      }
+      return db.all(recentSql, [date, limit], (recentErr, recent) => {
+        if (recentErr) {
+          console.error('Analytics query failed:', recentErr);
+          return res.status(500).json({ ok: false, message: '统计失败' });
+        }
+        return res.json({
+          ok: true,
+          date,
+          byPage,
+          byHour,
+          recent,
+        });
+      });
+    });
+  });
+});
+
 app.get('/', (_req, res) => {
   res.send(renderPage('home.html'));
 });
@@ -1233,6 +1512,22 @@ app.get(['/contact', '/contact.html', '/index.html'], (_req, res) => {
 
 app.get(['/companies', '/companies.html'], (_req, res) => {
   res.send(renderPage('companies.html'));
+});
+
+app.get(['/restaurants', '/restaurants.html'], (_req, res) => {
+  const html = renderRestaurantsPage();
+  if (!html) {
+    return res.status(500).send('Restaurants template missing');
+  }
+  return res.send(html);
+});
+
+app.get(['/enterprises', '/enterprises.html'], (_req, res) => {
+  const html = renderEnterprisesPage();
+  if (!html) {
+    return res.status(500).send('Enterprises template missing');
+  }
+  return res.send(html);
 });
 
 app.get('/company/:slug', async (req, res) => {
