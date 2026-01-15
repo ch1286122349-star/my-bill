@@ -466,8 +466,7 @@ const buildCompanySeo = (company, placeData) => {
   const slug = encodeURIComponent(String(company.slug || ''));
   const canonicalUrl = `${SITE_ORIGIN}/company/${slug}`;
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
-  const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
-  const cover = localCover || sanitizeCover(company.cover) || buildPlacePhotoUrl(placeId, 0);
+  const cover = resolveCompanyCoverUrl(company, placeId);
   const imageUrl = buildAbsoluteUrl(cover) || buildAbsoluteUrl('/apple-touch-icon.png');
   const schema = buildCompanyStructuredData(company, placeData, canonicalUrl, imageUrl, categoryLabel);
   const ogType = resolveOgType(schema['@type']);
@@ -585,6 +584,13 @@ const getLocalPlacePhoto = (placeId, index = 0) => {
     return { abs, url: `/image/place-photos/${fileName}` };
   }
   return null;
+};
+
+const resolveCompanyCoverUrl = (company, placeId) => {
+  const explicitCover = sanitizeCover(company?.cover);
+  if (explicitCover) return explicitCover;
+  const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
+  return sanitizeCover(localCover) || buildPlacePhotoUrl(placeId, 0);
 };
 const countLocalPlacePhotos = (placeId) => {
   const safeId = String(placeId || '').trim();
@@ -1067,12 +1073,11 @@ const buildCompaniesHtml = (options = {}) => {
     const safeName = escapeHtml(company.name);
     const safeSummary = escapeHtml(company.summary);
     const placeId = String(company.placeId || company.place_id || '').trim();
-    const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
     const contactValue = String(company.contact || '').trim();
     const safeContact = escapeHtml(contactValue);
     const hasContact = contactValue && !/未提供|暂无/i.test(contactValue);
     const safeSlug = encodeURIComponent(String(company.slug || ''));
-    const safeCover = sanitizeCover(localCover || company.cover || buildPlacePhotoUrl(placeId, 0));
+    const safeCover = resolveCompanyCoverUrl(company, placeId);
     const coverStyle = safeCover
       ? ` style=\"background-image: linear-gradient(140deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.35)), url('${safeCover}')\"`
       : '';
@@ -1318,8 +1323,7 @@ const renderCompanyPage = async (company) => {
     : `<div class="company-detail-extra locked"><h2>详情</h2><p>该企业未开通详情展示，如需展示请联系站长。</p></div>`;
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
   const seo = buildCompanySeo(company, placeData);
-  const localCover = getLocalPlacePhoto(placeId, 0)?.url || '';
-  const safeCover = localCover || sanitizeCover(company.cover) || buildPlacePhotoUrl(placeId, 0);
+  const safeCover = resolveCompanyCoverUrl(company, placeId);
   const galleryImages = new Set();
   const addGalleryImage = (value) => {
     const raw = String(value || '').trim();
@@ -1849,12 +1853,34 @@ app.get('/company/:slug', async (req, res) => {
 app.get('/api/place-photo/:placeId/:index?', async (req, res) => {
   const placeId = String(req.params.placeId || '').trim();
   const index = Number.parseInt(req.params.index || '0', 10);
-  if (!isPlacesApiEnabled() || !placeId) {
+  if (!placeId) {
+    return res.status(404).send('Not found');
+  }
+  const local = getLocalPlacePhoto(placeId, Number.isNaN(index) ? 0 : index);
+  if (local) {
+    try {
+      const buffer = fs.readFileSync(local.abs);
+      res.set('Content-Type', 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(buffer);
+    } catch (err) {
+      console.warn('Failed to read cached photo:', err.message);
+    }
+  }
+  if (!isPlacesApiEnabled()) {
     return res.status(404).send('Not found');
   }
   const photo = await fetchPlacePhoto(placeId, Number.isNaN(index) ? 0 : index);
   if (!photo) {
     return res.status(404).send('Not found');
+  }
+  try {
+    const safeId = String(placeId).trim();
+    const fileName = Number.isNaN(index) || index <= 0 ? `${safeId}.jpg` : `${safeId}-${index}.jpg`;
+    const abs = path.join(PLACE_PHOTO_DIR, fileName);
+    fs.writeFileSync(abs, photo.buffer);
+  } catch (err) {
+    console.warn('Failed to cache place photo:', err.message);
   }
   res.set('Content-Type', photo.contentType);
   res.set('Cache-Control', 'public, max-age=86400');
