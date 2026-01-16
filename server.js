@@ -1028,6 +1028,18 @@ const getCompanyPlaceData = async (company) => {
 const buildMapEmbedUrl = (company, placeData) => {
   const embed = sanitizeUrl(company.mapEmbed);
   if (embed) return embed;
+  const rawMapLink = sanitizeUrl(company.mapLink || company.mapUrl || company.map);
+  if (rawMapLink) {
+    try {
+      const parsed = new URL(rawMapLink);
+      const cid = parsed.searchParams.get('cid');
+      if (cid) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(`cid:${cid}`)}&z=16&output=embed`;
+      }
+    } catch (err) {
+      // Ignore malformed map links and continue with other fallbacks.
+    }
+  }
   const geoLat = Number(placeData?.geometry?.location?.lat ?? company.lat);
   const geoLng = Number(placeData?.geometry?.location?.lng ?? company.lng);
   if (Number.isFinite(geoLat) && Number.isFinite(geoLng)) {
