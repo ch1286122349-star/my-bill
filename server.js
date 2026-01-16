@@ -527,7 +527,7 @@ const buildSummaryLinesHtml = (summary) => {
     return '<p class="muted">暂无简介。</p>';
   }
   const items = lines.map((item) => (
-    `<li><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.text)}</strong></li>`
+    `<li><strong>${escapeHtml(item.text)}</strong></li>`
   )).join('');
   return `<ul class="company-summary-list">${items}</ul>`;
 };
@@ -570,11 +570,6 @@ const buildValueSublineHtml = (placeData) => {
   const todayHours = getTodayHours(placeData?.opening_hours);
   if (todayHours) {
     parts.push(`<span class="subtle">今日营业 ${escapeHtml(todayHours)}</span>`);
-  }
-  if (typeof placeData?.opening_hours?.open_now === 'boolean') {
-    const statusClass = placeData.opening_hours.open_now ? 'status-open' : 'status-closed';
-    const statusText = placeData.opening_hours.open_now ? '营业中' : '休息中';
-    parts.push(`<span class="status ${statusClass}">${statusText}</span>`);
   }
   if (!parts.length) return '';
   return `<div class="company-value-subline">${parts.join('')}</div>`;
@@ -1415,15 +1410,13 @@ const renderCompanyPage = async (company) => {
     : `<div class="company-hero"${heroStyle}></div>`;
   const galleryAttr = galleryImages.size ? ` data-gallery="${escapeHtml(Array.from(galleryImages).join('|'))}"` : '';
   const galleryButtonHtml = galleryImages.size > 1
-    ? '<button class="hero-gallery-btn" type="button" data-gallery-open>查看图集</button>'
+    ? ''
     : '';
   const heroHtml = `<div class="company-hero-grid${thumbTiles.length ? '' : ' company-hero-grid--single'}"${galleryAttr}>${heroTile}${thumbHtml}${galleryButtonHtml}</div>`;
   const valueLineHtml = buildValueLineHtml(company, placeData);
   const valueSublineHtml = buildValueSublineHtml(placeData);
   const summaryLinesHtml = buildSummaryLinesHtml(company.summary);
-  const sourceLineHtml = placeData
-    ? '<div class="company-source-line"><span>来源 Google Maps</span></div>'
-    : '';
+  const sourceLineHtml = '';
   const hasContact = Boolean(contactValue) && !/未提供|暂无/i.test(contactValue);
   const encodedContact = hasContact ? encodeURIComponent(contactValue) : '';
   const telLink = placePhone ? `tel:${placePhone.replace(/\s+/g, '')}` : '';
@@ -1438,9 +1431,6 @@ const renderCompanyPage = async (company) => {
     actionButtons.push(
       `<a class="action-btn${primaryAction === 'map' ? ' primary' : ''}" href="${safeMapLink}" target="_blank" rel="noopener">打开 Google 地图</a>`
     );
-  }
-  if (safePlaceUrl) {
-    actionButtons.push(`<a class="action-btn" href="${safePlaceUrl}" target="_blank" rel="noopener">查看全部评价</a>`);
   }
   if (hasContact) {
     actionButtons.push(`<button class="action-btn" type="button" data-copy="${encodedContact}">复制微信/WhatsApp</button>`);
@@ -1475,9 +1465,7 @@ const renderCompanyPage = async (company) => {
   if (placeData?.rating) {
     const ratingCount = placeData.user_ratings_total ? ` (${placeData.user_ratings_total})` : '';
     mapMetaBlocks.push(
-      `<div class="map-meta-block"><span>评分</span><strong>${escapeHtml(`${placeData.rating} ★${ratingCount}`)}</strong>` +
-      `${safePlaceUrl ? `<a class="map-review-link" href="${safePlaceUrl}" target="_blank" rel="noopener">查看评价</a>` : ''}` +
-      `</div>`
+      `<div class="map-meta-block"><span>评分</span><strong>${escapeHtml(`${placeData.rating} ★${ratingCount}`)}</strong></div>`
     );
   }
   if (placeData?.formatted_address) {
@@ -1487,10 +1475,9 @@ const renderCompanyPage = async (company) => {
   }
   const openNow = placeData?.opening_hours?.open_now;
   const todayHours = getTodayHours(placeData?.opening_hours);
-  if (typeof openNow === 'boolean' || todayHours) {
+  if (todayHours) {
     mapMetaBlocks.push(
       `<div class="map-meta-block"><span>营业</span>` +
-      `${typeof openNow === 'boolean' ? `<strong class="map-open ${openNow ? 'map-open--yes' : 'map-open--no'}">${openNow ? '营业中' : '休息中'}</strong>` : '<strong>营业信息</strong>'}` +
       `${todayHours ? `<em>${escapeHtml(todayHours)}</em>` : ''}` +
       `</div>`
     );
