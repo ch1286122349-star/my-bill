@@ -296,7 +296,11 @@ try {
 const COMPANIES_DATA_PATH = path.join(__dirname, 'data', 'companies.json');
 const GOOGLE_PLACES_API_KEY = (process.env.GOOGLE_PLACES_API_KEY || '').trim();
 const SERPAPI_KEY = (process.env.SERPAPI_KEY || '').trim();
-const PLACES_PROVIDER = String(process.env.PLACES_PROVIDER || (SERPAPI_KEY ? 'serpapi' : 'google')).trim().toLowerCase();
+const SEARCHAPI_KEY = (process.env.SEARCHAPI_KEY || '').trim();
+const PLACES_PROVIDER = String(
+  process.env.PLACES_PROVIDER
+  || (SERPAPI_KEY ? 'serpapi' : (SEARCHAPI_KEY ? 'searchapi' : 'google'))
+).trim().toLowerCase();
 const PLACES_API_ENABLED = String(process.env.PLACES_API_ENABLED || '').toLowerCase() === 'true';
 const PLACES_PREFETCH_ENABLED = String(process.env.PLACES_PREFETCH_ENABLED || '').toLowerCase() === 'true';
 const PLACE_DETAILS_CACHE_PATH = path.join(__dirname, 'data', 'place-details.json');
@@ -313,6 +317,7 @@ let placeDetailsDiskCache = null;
 const isPlacesApiEnabled = () => {
   if (!PLACES_API_ENABLED) return false;
   if (PLACES_PROVIDER === 'serpapi') return Boolean(SERPAPI_KEY);
+  if (PLACES_PROVIDER === 'searchapi') return Boolean(SEARCHAPI_KEY);
   return Boolean(GOOGLE_PLACES_API_KEY);
 };
 const loadPlaceDetailsDiskCache = () => {
@@ -646,16 +651,21 @@ const fetchJson = async (url, options) => {
 const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || ''));
 
 const fetchSerpApiJson = async (params) => {
-  if (!SERPAPI_KEY) {
-    throw new Error('Missing SERPAPI_KEY');
+  const provider = PLACES_PROVIDER;
+  const apiKey = provider === 'searchapi' ? SEARCHAPI_KEY : SERPAPI_KEY;
+  if (!apiKey) {
+    throw new Error(provider === 'searchapi' ? 'Missing SEARCHAPI_KEY' : 'Missing SERPAPI_KEY');
   }
-  const url = new URL('https://serpapi.com/search.json');
+  const endpoint = provider === 'searchapi'
+    ? 'https://www.searchapi.io/api/v1/search'
+    : 'https://serpapi.com/search.json';
+  const url = new URL(endpoint);
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== '') {
       url.searchParams.set(key, String(value));
     }
   });
-  url.searchParams.set('api_key', SERPAPI_KEY);
+  url.searchParams.set('api_key', apiKey);
   return fetchJson(url.toString());
 };
 
@@ -764,7 +774,7 @@ const fetchPlaceIdByQuery = async (query) => {
   if (!isPlacesApiEnabled() || !query) return '';
   const cached = getCachedValue(placeIdCache, query);
   if (cached) return cached;
-  if (PLACES_PROVIDER === 'serpapi') {
+  if (PLACES_PROVIDER === 'serpapi' || PLACES_PROVIDER === 'searchapi') {
     try {
       const data = await fetchSerpApiJson({
         engine: 'google_maps',
@@ -809,7 +819,16 @@ const fetchPlaceIdByQuery = async (query) => {
   }
 };
 
-const fetchPlaceDetails = async (placeId) => {
+const pickPlaceResult = (data, placeId = '') => {
+  const localResults = Array.isArray(data?.local_results) ? data.local_results : [];
+  const placeResults = data?.place_results || data?.place_result || null;
+  const candidates = localResults.length ? localResults : (placeResults ? [placeResults] : []);
+  if (!placeId) return candidates[0] || null;
+  const match = candidates.find((item) => String(item?.place_id || '').trim() === placeId);
+  return match || candidates[0] || null;
+};
+
+const fetchPlaceDetails = async (placeId, query = '') => {
   if (!isPlacesApiEnabled() || !placeId) return null;
   const cached = getCachedValue(placesCache, placeId);
   if (cached) return cached;
@@ -817,6 +836,29 @@ const fetchPlaceDetails = async (placeId) => {
   if (diskCache[placeId]) {
     setCachedValue(placesCache, placeId, diskCache[placeId]);
     return diskCache[placeId];
+  }
+  if (PLACES_PROVIDER === 'searchapi') {
+    const safeQuery = String(query || '').trim();
+    if (!safeQuery) return null;
+    try {
+      const data = await fetchSerpApiJson({
+        engine: 'google_maps',
+        type: 'search',
+        q: safeQuery,
+        hl: 'zh-CN',
+        gl: 'mx',
+      });
+      const place = pickPlaceResult(data, placeId);
+      const mapped = mapSerpPlaceResult(place, placeId);
+      if (!mapped) return null;
+      setCachedValue(placesCache, placeId, mapped);
+      diskCache[placeId] = mapped;
+      savePlaceDetailsDiskCache();
+      return mapped;
+    } catch (err) {
+      console.warn('SearchApi detail failed:', err.message);
+      return null;
+    }
   }
   if (PLACES_PROVIDER === 'serpapi') {
     try {
@@ -974,7 +1016,7 @@ const getCompanyPlaceData = async (company) => {
   // API 开启时才允许查找/更新
   const placeId = explicitPlaceId || await fetchPlaceIdByQuery(query);
   if (!placeId) return null;
-  const live = await fetchPlaceDetails(placeId);
+  const live = await fetchPlaceDetails(placeId, query);
   if (live) {
     diskCache[placeId] = live;
     savePlaceDetailsDiskCache();

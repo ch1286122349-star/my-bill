@@ -4,15 +4,27 @@ const fs = require('fs');
 const path = require('path');
 
 const SERPAPI_KEY = (process.env.SERPAPI_KEY || '').trim();
-if (!SERPAPI_KEY) {
-  console.error('Missing SERPAPI_KEY.');
+const SEARCHAPI_KEY = (process.env.SEARCHAPI_KEY || '').trim();
+const PLACES_PROVIDER = String(
+  process.env.PLACES_PROVIDER
+  || (SEARCHAPI_KEY ? 'searchapi' : (SERPAPI_KEY ? 'serpapi' : 'google'))
+).trim().toLowerCase();
+const PLACES_API_KEY = PLACES_PROVIDER === 'searchapi' ? SEARCHAPI_KEY : SERPAPI_KEY;
+if (!PLACES_API_KEY) {
+  console.error(PLACES_PROVIDER === 'searchapi' ? 'Missing SEARCHAPI_KEY.' : 'Missing SERPAPI_KEY.');
   process.exit(1);
 }
 
 const COMPANIES_PATH = path.join(__dirname, '..', 'data', 'companies.json');
 const PHOTO_DIR = path.join(__dirname, '..', 'image', 'place-photos');
 const MIN_BYTES = Number.parseInt(process.env.PLACE_PHOTO_MIN_BYTES || '120000', 10);
-const SERP_INTERVAL_MS = Number.parseInt(process.env.SERPAPI_INTERVAL_MS || '900', 10);
+const SERP_INTERVAL_MS = Number.parseInt(
+  process.env.PLACES_API_INTERVAL_MS
+  || process.env.SEARCHAPI_INTERVAL_MS
+  || process.env.SERPAPI_INTERVAL_MS
+  || '900',
+  10
+);
 
 fs.mkdirSync(PHOTO_DIR, { recursive: true });
 
@@ -34,13 +46,16 @@ const fetchSerpApiJson = async (params) => {
   const now = Date.now();
   const wait = SERP_INTERVAL_MS - (now - lastSerpCall);
   if (wait > 0) await sleep(wait);
-  const url = new URL('https://serpapi.com/search.json');
+  const endpoint = PLACES_PROVIDER === 'searchapi'
+    ? 'https://www.searchapi.io/api/v1/search'
+    : 'https://serpapi.com/search.json';
+  const url = new URL(endpoint);
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== '') {
       url.searchParams.set(key, String(value));
     }
   });
-  url.searchParams.set('api_key', SERPAPI_KEY);
+  url.searchParams.set('api_key', PLACES_API_KEY);
   lastSerpCall = Date.now();
   return fetchJson(url.toString());
 };
@@ -55,6 +70,16 @@ const parseSizeFromUrl = (url) => {
 
 const upgradeGoogleusercontentUrl = (url, width = 1600, height = 1200) => {
   const raw = String(url || '');
+  if (/streetviewpixels-pa\.googleapis\.com/.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      if (parsed.searchParams.has('w')) parsed.searchParams.set('w', String(width));
+      if (parsed.searchParams.has('h')) parsed.searchParams.set('h', String(height));
+      return parsed.toString();
+    } catch (err) {
+      return raw;
+    }
+  }
   if (!/googleusercontent\.com/.test(raw)) return raw;
   if (raw.includes('=s')) {
     return raw.replace(/=s\d+(-k-no)?/, `=s${width}-k-no`);
@@ -118,8 +143,29 @@ const hasLocalPhoto = (placeId) => {
   return fs.existsSync(abs);
 };
 
-const fetchPlaceDetails = async (placeId) => {
+const pickPlaceResult = (data, placeId = '') => {
+  const localResults = Array.isArray(data?.local_results) ? data.local_results : [];
+  const placeResults = data?.place_results || data?.place_result || null;
+  const candidates = localResults.length ? localResults : (placeResults ? [placeResults] : []);
+  if (!placeId) return candidates[0] || null;
+  const match = candidates.find((item) => String(item?.place_id || '').trim() === placeId);
+  return match || candidates[0] || null;
+};
+
+const fetchPlaceDetails = async (placeId, query = '') => {
   if (!placeId) return null;
+  if (PLACES_PROVIDER === 'searchapi') {
+    const safeQuery = String(query || '').trim();
+    if (!safeQuery) return null;
+    const data = await fetchSerpApiJson({
+      engine: 'google_maps',
+      type: 'search',
+      q: safeQuery,
+      hl: 'zh-CN',
+      gl: 'mx',
+    });
+    return pickPlaceResult(data, placeId);
+  }
   const data = await fetchSerpApiJson({
     engine: 'google_maps',
     type: 'place',
@@ -143,7 +189,7 @@ const findPlaceIdByQuery = async (query) => {
   return String(first?.place_id || '').trim();
 };
 
-const ensurePlacePhoto = async (placeId, memo) => {
+const ensurePlacePhoto = async (placeId, memo, query = '') => {
   if (!placeId) return false;
   if (memo.has(placeId)) return memo.get(placeId);
   if (hasLocalPhoto(placeId)) {
@@ -152,7 +198,7 @@ const ensurePlacePhoto = async (placeId, memo) => {
   }
   let place = null;
   try {
-    place = await fetchPlaceDetails(placeId);
+    place = await fetchPlaceDetails(placeId, query);
   } catch (err) {
     console.warn(`Place details failed for ${placeId}:`, err.message);
     memo.set(placeId, false);
@@ -209,11 +255,12 @@ const run = async () => {
     const fallbackId = String(company.buildingPlaceId || '').trim();
     let coverId = '';
 
-    if (await ensurePlacePhoto(primaryId, memo)) {
-      coverId = primaryId;
-    } else if (await ensurePlacePhoto(fallbackId, memo)) {
-      coverId = fallbackId;
-    } else {
+  const query = String(company.mapQuery || company.name || '').trim();
+  if (await ensurePlacePhoto(primaryId, memo, query)) {
+    coverId = primaryId;
+  } else if (await ensurePlacePhoto(fallbackId, memo, query)) {
+    coverId = fallbackId;
+  } else {
       coverId = primaryId || fallbackId;
     }
 
