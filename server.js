@@ -1030,14 +1030,9 @@ const buildMapEmbedUrl = (company, placeData) => {
   if (embed) return embed;
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
   const query = String(placeData?.name || company.mapQuery || '').trim();
-  if (GOOGLE_PLACES_API_KEY && (placeId || query)) {
-    const base = 'https://www.google.com/maps/embed/v1/place';
-    const key = encodeURIComponent(GOOGLE_PLACES_API_KEY);
-    const q = placeId ? `place_id:${placeId}` : query;
-    return `${base}?key=${key}&q=${encodeURIComponent(q)}`;
-  }
-  if (!query) return '';
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+  const q = placeId ? `place_id:${placeId}` : query;
+  if (!q) return '';
+  return `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
 };
 
 const buildCompaniesHtml = (options = {}) => {
