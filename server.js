@@ -1028,6 +1028,12 @@ const getCompanyPlaceData = async (company) => {
 const buildMapEmbedUrl = (company, placeData) => {
   const embed = sanitizeUrl(company.mapEmbed);
   if (embed) return embed;
+  const geoLat = Number(placeData?.geometry?.location?.lat ?? company.lat);
+  const geoLng = Number(placeData?.geometry?.location?.lng ?? company.lng);
+  if (Number.isFinite(geoLat) && Number.isFinite(geoLng)) {
+    const coords = `${geoLat},${geoLng}`;
+    return `https://maps.google.com/maps?q=${encodeURIComponent(coords)}&z=16&output=embed`;
+  }
   const placeId = String(placeData?.place_id || company.placeId || company.place_id || '').trim();
   const query = String(placeData?.name || company.mapQuery || '').trim();
   const q = placeId ? `place_id:${placeId}` : query;
