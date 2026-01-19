@@ -1,0 +1,292 @@
+<section class="directory-shell directory-app" id="directory">
+  <header class="directory-hero">
+    <h1>墨西哥华人商家与中资企业导航</h1>
+  </header>
+
+  <div class="directory-controls">
+    <div class="city-nav directory-city-nav" aria-label="城市筛选" data-directory-city-nav></div>
+  </div>
+
+  <div class="directory-sticky" data-directory-sticky>
+    <div class="directory-tabs" role="tablist" aria-label="板块切换" data-directory-tabs></div>
+    <div class="directory-filters" aria-label="分类筛选" data-directory-filters hidden></div>
+  </div>
+
+  <div class="directory-meta" data-directory-meta></div>
+  <div class="directory-grid" data-directory-grid></div>
+</section>
+<script>
+  (() => {
+    const data = window.__DIRECTORY_DATA__?.items;
+    if (!Array.isArray(data)) return;
+
+    const CITY_ORDER = ['all', '墨西哥城', '蒙特雷', '瓜达拉哈拉'];
+    const CITY_LABELS = new Map([
+      ['all', '全部'],
+      ['墨西哥城', '墨西哥城'],
+      ['蒙特雷', '蒙特雷'],
+      ['瓜达拉哈拉', '瓜达拉哈拉'],
+    ]);
+    const FOOD_CATEGORIES = ['中餐', '火锅', '面馆', '烧烤', '饮品'];
+    const FOOD_INDUSTRY = '餐饮与服务';
+    const ENTERPRISE_INDUSTRY = '中资企业';
+    const MARKET_CATEGORY = '超市';
+    const TABS = [
+      {
+        id: 'restaurants',
+        label: '餐饮',
+        industry: FOOD_INDUSTRY,
+        hasCategory: true,
+        filter: (item) => item.industry === FOOD_INDUSTRY && item.category !== MARKET_CATEGORY,
+      },
+      {
+        id: 'markets',
+        label: '超市',
+        industry: FOOD_INDUSTRY,
+        hasCategory: false,
+        filter: (item) => item.industry === FOOD_INDUSTRY && item.category === MARKET_CATEGORY,
+      },
+      {
+        id: 'enterprises',
+        label: '中资企业',
+        industry: ENTERPRISE_INDUSTRY,
+        hasCategory: false,
+        filter: (item) => item.industry === ENTERPRISE_INDUSTRY,
+      },
+      { id: 'suppliers', label: '供应商', industry: '供应商', hasCategory: false, isStatic: true },
+    ];
+    const supplierCards = [
+      {
+        title: '本地供应商征集中',
+        desc: '欢迎推荐靠谱供应商，物流/设备/办公/原料均可。',
+        href: '/contact',
+      },
+      {
+        title: '成为优质供应商',
+        desc: '提交企业信息后，我们将尽快审核并上线展示。',
+        href: '/contact',
+      },
+      {
+        title: '查看更多供应商',
+        desc: '供应商板块正在完善中，敬请期待。',
+        href: '/directory?tab=suppliers',
+      },
+    ];
+
+    const root = document.querySelector('.directory-app');
+    const cityNav = root?.querySelector('[data-directory-city-nav]');
+    const tabsEl = root?.querySelector('[data-directory-tabs]');
+    const filtersEl = root?.querySelector('[data-directory-filters]');
+    const metaEl = root?.querySelector('[data-directory-meta]');
+    const gridEl = root?.querySelector('[data-directory-grid]');
+
+    if (!root || !cityNav || !tabsEl || !filtersEl || !metaEl || !gridEl) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const normalizeTab = (value) => TABS.find((tab) => tab.id === value)?.id || 'restaurants';
+    const normalizeCity = (value) => (CITY_ORDER.includes(value) ? value : 'all');
+
+    const state = {
+      tab: normalizeTab(params.get('tab') || 'restaurants'),
+      city: normalizeCity(params.get('city') || 'all'),
+      category: 'all',
+    };
+
+    const updateUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', state.tab);
+      if (state.city === 'all') {
+        url.searchParams.delete('city');
+      } else {
+        url.searchParams.set('city', state.city);
+      }
+      window.history.replaceState({}, '', url);
+    };
+
+    const getTabConfig = () => TABS.find((tab) => tab.id === state.tab) || TABS[0];
+    const getTabItems = () => {
+      const tab = getTabConfig();
+      if (tab.isStatic) return [];
+      if (typeof tab.filter === 'function') {
+        return data.filter(tab.filter);
+      }
+      return data.filter((item) => item.industry === tab.industry);
+    };
+
+    const filterItemsByCity = (items) => (
+      state.city === 'all'
+        ? items
+        : items.filter((item) => item.city === state.city)
+    );
+
+    const filterItems = (items) => {
+      const byCity = filterItemsByCity(items);
+      const tab = getTabConfig();
+      if (!tab.hasCategory || state.category === 'all') return byCity;
+      return byCity.filter((item) => item.category === state.category);
+    };
+
+    const buildCityCounts = (items) => {
+      const counts = new Map();
+      counts.set('all', items.length);
+      items.forEach((item) => {
+        const city = item.city || '未分类城市';
+        counts.set(city, (counts.get(city) || 0) + 1);
+      });
+      return counts;
+    };
+
+    const buildCategoryCounts = (items) => {
+      const counts = new Map();
+      items.forEach((item) => {
+        const category = item.category || '其他';
+        counts.set(category, (counts.get(category) || 0) + 1);
+      });
+      return counts;
+    };
+
+    const renderTabs = () => {
+      tabsEl.innerHTML = TABS.map((tab) => (
+        `<button class="directory-tab${tab.id === state.tab ? ' is-active' : ''}" type="button" data-tab="${tab.id}" role="tab">${tab.label}</button>`
+      )).join('');
+      tabsEl.querySelectorAll('[data-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.tab = normalizeTab(btn.dataset.tab || 'restaurants');
+          if (!getTabConfig().hasCategory) {
+            state.category = 'all';
+          }
+          updateUrl();
+          render();
+        });
+      });
+    };
+
+    const renderCityNav = () => {
+      const counts = buildCityCounts(getTabItems());
+      cityNav.innerHTML = CITY_ORDER.map((city) => {
+        const label = CITY_LABELS.get(city) || city;
+        const count = counts.get(city) || 0;
+        return (
+          `<button class="pill${state.city === city ? ' is-active' : ''}" type="button" data-city="${city}">${label} <em>${count}</em></button>`
+        );
+      }).join('');
+      cityNav.querySelectorAll('[data-city]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.city = normalizeCity(btn.dataset.city || 'all');
+          updateUrl();
+          render();
+        });
+      });
+    };
+
+    const renderFilters = () => {
+      const tab = getTabConfig();
+      if (!tab.hasCategory) {
+        filtersEl.hidden = true;
+        filtersEl.innerHTML = '';
+        return;
+      }
+      const items = filterItemsByCity(getTabItems());
+      const counts = buildCategoryCounts(items);
+      if (state.category !== 'all' && !counts.has(state.category)) {
+        state.category = 'all';
+      }
+      const pills = [
+        `<button class="filter-pill${state.category === 'all' ? ' is-active' : ''}" type="button" data-category="all">全部</button>`,
+        ...FOOD_CATEGORIES.filter((category) => counts.has(category)).map((category) => (
+          `<button class="filter-pill${state.category === category ? ' is-active' : ''}" type="button" data-category="${category}">${category}</button>`
+        )),
+      ].join('');
+      filtersEl.innerHTML = `<span class="tools-label">分类</span>${pills}`;
+      filtersEl.hidden = false;
+      filtersEl.querySelectorAll('[data-category]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.category = btn.dataset.category || 'all';
+          render();
+        });
+      });
+    };
+
+    const renderMeta = (items) => {
+      const tab = getTabConfig();
+      const label = CITY_LABELS.get(state.city) || state.city;
+      metaEl.innerHTML = (
+        `<div class="directory-meta__title">${tab.label}</div>` +
+        `<div class="directory-meta__info">` +
+        `<span class="directory-chip">${label}</span>` +
+        `<span class="directory-chip">${items.length} 家</span>` +
+        `</div>`
+      );
+    };
+
+    const renderCard = (item) => {
+      const cover = item.cover || '';
+      const coverStyle = cover
+        ? ` style="background-image: linear-gradient(140deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.35)), url('${cover}')"`
+        : '';
+      const coverClass = cover ? ' company-cover' : '';
+      const desc = item.summary || '欢迎了解更多详情。';
+      const safeSlug = encodeURIComponent(item.slug);
+      return (
+        `<a class="company-card company-link${coverClass}" href="/company/${safeSlug}"${coverStyle}>` +
+        `<h4>${item.name}</h4>` +
+        `<p class="company-desc">${desc}</p>` +
+        `</a>`
+      );
+    };
+
+    const renderSupplierCards = () => {
+      return supplierCards.map((card) => (
+        `<a class="directory-card directory-card--placeholder" href="${card.href}">` +
+        `<h4>${card.title}</h4>` +
+        `<p>${card.desc}</p>` +
+        `</a>`
+      )).join('');
+    };
+
+    const renderGrid = (list) => {
+      const tab = getTabConfig();
+      if (tab.isStatic) {
+        gridEl.innerHTML = renderSupplierCards();
+        return;
+      }
+      if (!list.length) {
+        gridEl.innerHTML = '<div class="directory-empty">暂无匹配内容。</div>';
+        return;
+      }
+      gridEl.innerHTML = list.map(renderCard).join('');
+    };
+
+    const render = () => {
+      renderTabs();
+      renderCityNav();
+      renderFilters();
+      const tab = getTabConfig();
+      const list = tab.isStatic ? supplierCards : filterItems(getTabItems());
+      renderMeta(list);
+      if (!tab.isStatic && !list.length && tab.hasCategory && state.category !== 'all') {
+        state.category = 'all';
+        renderFilters();
+        const fallback = filterItems(getTabItems());
+        renderMeta(fallback);
+        renderGrid(fallback);
+        return;
+      }
+      renderGrid(list);
+    };
+
+    render();
+
+    // 动态设置 sticky 的 top 值，确保在 header 下方
+    const stickyEl = root?.querySelector('[data-directory-sticky]');
+    const headerEl = document.querySelector('.site-header');
+    if (stickyEl && headerEl) {
+      const updateStickyTop = () => {
+        const headerHeight = headerEl.offsetHeight;
+        stickyEl.style.top = `${headerHeight + 14}px`;
+      };
+      updateStickyTop();
+      window.addEventListener('resize', updateStickyTop);
+    }
+  })();
+</script>

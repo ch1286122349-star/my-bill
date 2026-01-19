@@ -74,6 +74,7 @@ const today = new Date().toISOString().split('T')[0];
 const urls = [
   { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'weekly' },
   { loc: `${baseUrl}/companies`, priority: '0.8', changefreq: 'weekly' },
+  { loc: `${baseUrl}/directory`, priority: '0.8', changefreq: 'weekly' },
   { loc: `${baseUrl}/enterprises`, priority: '0.8', changefreq: 'weekly' },
   { loc: `${baseUrl}/forum`, priority: '0.7', changefreq: 'daily' },
   { loc: `${baseUrl}/restaurants`, priority: '0.8', changefreq: 'weekly' },

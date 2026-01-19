@@ -141,17 +141,4 @@
       });
     });
   })();
-
-  (() => {
-    const header = document.querySelector('.site-header');
-    if (!header) return;
-
-    const updateStickyOffset = () => {
-      const height = Math.ceil(header.getBoundingClientRect().height);
-      document.documentElement.style.setProperty('--sticky-offset', `${height}px`);
-    };
-
-    updateStickyOffset();
-    window.addEventListener('resize', updateStickyOffset);
-  })();
 </script>

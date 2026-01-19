@@ -38,23 +38,238 @@
   </script>
   <!--HEAD-->
 </head>
-<body class="home">
+<body class="home home-directory">
   <!--HEADER-->
   <div class="page">
-    <main class="hero">
-      <div>
-        <h1>墨西哥华人商家与中资企业导航</h1>
-        <div class="hero-actions">
-          <a class="btn primary" href="/restaurants">墨西哥中餐厅</a>
-          <a class="btn ghost" href="/enterprises">墨西哥中资企业</a>
-        </div>
-      </div>
-    </main>
-    <section class="page-section">
-      <!--COMPANIES-->
+    <section class="home-top">
+      <h1>墨西哥华人商家与中资企业导航</h1>
     </section>
 
+    <section class="home-filters" aria-label="城市筛选">
+      <div class="city-nav home-city-nav" data-home-city-nav></div>
+    </section>
+
+    <section class="home-grid">
+      <section class="home-block" data-block="restaurants">
+        <div class="home-block__head">
+          <h2>餐饮</h2>
+          <div class="home-block__meta">
+            <span class="home-chip" data-block-city></span>
+            <span class="home-chip" data-block-count></span>
+          </div>
+        </div>
+        <div class="home-block__grid" data-block-grid></div>
+      </section>
+
+      <section class="home-block" data-block="markets">
+        <div class="home-block__head">
+          <h2>超市</h2>
+          <div class="home-block__meta">
+            <span class="home-chip" data-block-city></span>
+            <span class="home-chip" data-block-count></span>
+          </div>
+        </div>
+        <div class="home-block__grid" data-block-grid></div>
+      </section>
+
+      <section class="home-block" data-block="enterprises">
+        <div class="home-block__head">
+          <h2>中资企业</h2>
+          <div class="home-block__meta">
+            <span class="home-chip" data-block-city></span>
+            <span class="home-chip" data-block-count></span>
+          </div>
+        </div>
+        <div class="home-block__grid" data-block-grid></div>
+      </section>
+
+      <section class="home-block" data-block="suppliers">
+        <div class="home-block__head">
+          <h2>供应商</h2>
+          <div class="home-block__meta">
+            <span class="home-chip" data-block-city>全部</span>
+            <span class="home-chip" data-block-count>即将上线</span>
+          </div>
+        </div>
+        <div class="home-block__grid" data-block-grid></div>
+      </section>
+    </section>
   </div>
   <!--FOOTER-->
+  <!--DATA-->
+  <script>
+    (() => {
+      const data = window.__DIRECTORY_DATA__?.items;
+      if (!Array.isArray(data)) return;
+
+      const CITY_ORDER = ['all', '墨西哥城', '蒙特雷', '瓜达拉哈拉'];
+      const CITY_LABELS = new Map([
+        ['all', '全部'],
+        ['墨西哥城', '墨西哥城'],
+        ['蒙特雷', '蒙特雷'],
+        ['瓜达拉哈拉', '瓜达拉哈拉'],
+      ]);
+      const STORAGE_KEY = 'mx-home-city';
+      const FOOD_INDUSTRY = '餐饮与服务';
+      const ENTERPRISE_INDUSTRY = '中资企业';
+      const MARKET_CATEGORY = '超市';
+
+      const root = document.querySelector('.home-directory');
+      const cityNav = root?.querySelector('[data-home-city-nav]');
+      const blocks = {
+        restaurants: root?.querySelector('[data-block="restaurants"]'),
+        markets: root?.querySelector('[data-block="markets"]'),
+        enterprises: root?.querySelector('[data-block="enterprises"]'),
+        suppliers: root?.querySelector('[data-block="suppliers"]'),
+      };
+      if (!root || !cityNav || !blocks.restaurants || !blocks.markets || !blocks.enterprises || !blocks.suppliers) return;
+
+      const normalizeCity = (value) => (CITY_ORDER.includes(value) ? value : 'all');
+      let currentCity = normalizeCity(localStorage.getItem(STORAGE_KEY) || 'all');
+
+      const escapeHtml = (value) => String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+      const filterByCity = (items) => (
+        currentCity === 'all'
+          ? items
+          : items.filter((item) => item.city === currentCity)
+      );
+
+      const getFoodItems = () => data.filter((item) => item.industry === FOOD_INDUSTRY);
+      const getRestaurantItems = () => getFoodItems().filter((item) => item.category !== MARKET_CATEGORY);
+      const getMarketItems = () => getFoodItems().filter((item) => item.category === MARKET_CATEGORY);
+      const getEnterpriseItems = () => data.filter((item) => item.industry === ENTERPRISE_INDUSTRY);
+
+      const buildCityCounts = () => {
+        const items = data.filter((item) => item.industry === FOOD_INDUSTRY || item.industry === ENTERPRISE_INDUSTRY);
+        const counts = new Map();
+        counts.set('all', items.length);
+        items.forEach((item) => {
+          const city = item.city || '未分类城市';
+          counts.set(city, (counts.get(city) || 0) + 1);
+        });
+        return counts;
+      };
+
+      const renderCityNav = () => {
+        const counts = buildCityCounts();
+        cityNav.innerHTML = CITY_ORDER.map((city) => {
+          const label = CITY_LABELS.get(city) || city;
+          const count = counts.get(city) || 0;
+          return (
+            `<button class="pill${currentCity === city ? ' is-active' : ''}" type="button" data-city="${city}">${label} <em>${count}</em></button>`
+          );
+        }).join('');
+        cityNav.querySelectorAll('[data-city]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            currentCity = normalizeCity(btn.dataset.city || 'all');
+            localStorage.setItem(STORAGE_KEY, currentCity);
+            render();
+          });
+        });
+      };
+
+      const renderPreviewCard = (item) => {
+        const cover = item.cover ? String(item.cover).replace(/'/g, '%27') : '';
+        const coverStyle = cover
+          ? ` style="background-image: linear-gradient(140deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.35)), url('${cover}')"`
+          : '';
+        const coverClass = cover ? ' company-cover' : '';
+        const desc = escapeHtml(item.summary || '欢迎了解更多详情。');
+        const safeSlug = encodeURIComponent(item.slug);
+        return (
+          `<a class="company-card company-link home-card${coverClass}" href="/company/${safeSlug}"${coverStyle}>` +
+          `<h4>${escapeHtml(item.name)}</h4>` +
+          `<p class="company-desc">${desc}</p>` +
+          `</a>`
+        );
+      };
+
+      const buildDirectoryLink = (tabId) => {
+        const base = `/directory?tab=${tabId}`;
+        if (currentCity === 'all') return base;
+        return `${base}&city=${encodeURIComponent(currentCity)}`;
+      };
+
+      const renderMoreCard = (href, label) => (
+        `<a class="home-card home-card--more" href="${href}">` +
+        `<span>${label}</span>` +
+        `<em>查看更多</em>` +
+        `</a>`
+      );
+
+      const renderSupplierCards = () => (
+        [
+          {
+            title: '本地供应商征集中',
+            desc: '欢迎推荐靠谱供应商，物流/设备/办公/原料均可。',
+            href: '/contact',
+          },
+          {
+            title: '成为优质供应商',
+            desc: '提交企业信息后，我们将尽快审核并上线展示。',
+            href: '/contact',
+          },
+          {
+            title: '供应商服务一览',
+            desc: '后续将上线本地供应链与服务资源汇总。',
+            href: '/contact',
+          },
+          {
+            title: '合作推荐通道',
+            desc: '如有供应链合作需求，请提交信息。',
+            href: '/contact',
+          },
+          {
+            title: '供应商专区',
+            desc: '供应商板块正在完善中，敬请期待。',
+            href: '/contact',
+          },
+        ]
+          .map((card) => (
+            `<a class="home-card home-card--placeholder" href="${card.href}">` +
+            `<h4>${card.title}</h4>` +
+            `<p>${card.desc}</p>` +
+            `</a>`
+          ))
+          .join('')
+      );
+
+      const renderBlock = (blockEl, items, tabId) => {
+        const cityLabel = CITY_LABELS.get(currentCity) || currentCity;
+        const allItems = filterByCity(items);
+        const previewItems = allItems.slice(-5);
+        const grid = blockEl.querySelector('[data-block-grid]');
+        const cityEl = blockEl.querySelector('[data-block-city]');
+        const countEl = blockEl.querySelector('[data-block-count]');
+        if (cityEl) cityEl.textContent = cityLabel;
+        if (countEl) countEl.textContent = `${allItems.length} 家`;
+        if (!grid) return;
+        const cards = [
+          ...previewItems.map(renderPreviewCard),
+          renderMoreCard(buildDirectoryLink(tabId), '查看更多'),
+        ];
+        grid.innerHTML = cards.join('');
+      };
+
+      const render = () => {
+        renderCityNav();
+        renderBlock(blocks.restaurants, getRestaurantItems(), 'restaurants');
+        renderBlock(blocks.markets, getMarketItems(), 'markets');
+        renderBlock(blocks.enterprises, getEnterpriseItems(), 'enterprises');
+        const supplierGrid = blocks.suppliers.querySelector('[data-block-grid]');
+        if (supplierGrid) {
+          supplierGrid.innerHTML = renderSupplierCards() + renderMoreCard(buildDirectoryLink('suppliers'), '查看更多');
+        }
+      };
+
+      render();
+    })();
+  </script>
 </body>
 </html>

@@ -136,13 +136,12 @@
         if (images.length) {
           const buildModal = (startIndex = 0) => {
             let current = startIndex;
-            const companyName = document.querySelector('h1')?.textContent?.trim() || '企业';
             const modal = document.createElement('div');
             modal.className = 'gallery-modal';
             modal.innerHTML = `
               <div class="gallery-modal__content">
                 <button class="gallery-modal__close" type="button" data-gallery-close>关闭</button>
-                <img class="gallery-modal__image" src="${images[current]}" alt="${companyName}的照片 ${current + 1}">
+                <img class="gallery-modal__image" src="${images[current]}" alt="图集预览">
                 <div class="gallery-modal__nav">
                   <button class="gallery-modal__btn" type="button" data-gallery-prev>上一张</button>
                   <span>${current + 1} / ${images.length}</span>
@@ -157,7 +156,6 @@
             const counter = modal.querySelector('.gallery-modal__nav span');
             const update = () => {
               img.src = images[current];
-              img.alt = `${companyName}的照片 ${current + 1}`;
               counter.textContent = `${current + 1} / ${images.length}`;
             };
 
