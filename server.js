@@ -9,7 +9,7 @@ const { google } = require('googleapis');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
 const isDev = process.env.NODE_ENV !== 'production';
 const ANALYTICS_ENABLED = String(process.env.ANALYTICS_ENABLED || 'true').toLowerCase() !== 'false';
